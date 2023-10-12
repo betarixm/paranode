@@ -6,10 +6,17 @@ on:
       - "*"
 
 jobs:
-  scalafmt:
+  lint-and-format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 20
+          cache: sbt
+      - name: Run scalafix
+        run: sbt -v "scalafixAll --check"
       - name: Run scalafmt
         uses: jrouly/scalafmt-native-action@v2
         with:
