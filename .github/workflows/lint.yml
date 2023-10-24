@@ -22,3 +22,6 @@ jobs:
         with:
           version: "3.7.14"
           arguments: "--list"
+      - uses: DavidAnson/markdownlint-cli2-action@v13
+        with:
+          globs: "**/*.md"
