@@ -11,7 +11,7 @@ ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 lazy val root = (project in file("."))
   .settings(
     name := "cs434-project",
-    idePackagePrefix := Some("kr.ac.postech.cs434.green"),
+    idePackagePrefix := Some("kr.ac.postech.paranode"),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused"
