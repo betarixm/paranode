@@ -23,47 +23,49 @@ Implementing system that can sort records stored across **multiple disks**, usin
 
 To fully exploiting the `N` number of workers, we should sort data in a distributed manner on each worker. To accomplish this, we propose dividing the entire procedure into two phases, as outlined below.
 
-### First Phase
+### First Phase: Relocating
 
-To exploit all the Workers in parallel, we have to distribute the recordes into each Worker.
+To efficiently utilize all the workers for sorting, the master node assigns tasks to each worker based on key ranges and coordinates data exchange between them.
 
-#### Step1: Data Sampling
+#### Step 1: Data Sampling
 
-- Sample a small subset of records from each Worker Node.
-- Send key of these samples to the Master Node.
+- Sample a small subset of records from each worker node.
+- Send key of these samples to the master node.
 
-#### Step2: Key Range Estimation
+#### Step 2: Key Range Estimation
 
-- Master Node sorts all the received keys.
-- Master Node then divied sorted keys into 'n' ranges, where 'n' is the number of Worker Nodes.
+- Master node sorts all the received keys.
+- Master node then divide the sorted keys into `n` ranges, where `n` is the number of worker nodes.
 
-#### Step3: Broadcast Key Ranges
+#### Step 3: Broadcast Key Ranges
 
-- Master Node broadcasts the estimated key ranges to all Worker Nodes.
+- Master node broadcasts the estimated key ranges to all worker nodes.
 
-#### Step4: Make Group(Partition)
+#### Step 4: Make Group(Partition)
 
-- Each Worker Node then divide its local data according to the received key ranges.
-  - Any key that falls within a paricular range will be grouped together.
-- Detailed explaination for using multiple cores is in "Worker Proposal" document.
+- Each worker node then divides its local data according to the received key ranges.
+- Any key falling within a particular range is grouped together.
+- Detailed explanations for utilizing multiple cores can be found in the "Worker Proposal" document.
 
-#### Step5: Relocating
+#### Step 5: Exchanging
 
-- Master Node pick two Worker Nodes and change its block until there is nothing to relocate.
-  - block: the unit of moving data.
-- Detailed explaination is in "Master Proposal" document.
-- Example for brief understaning of Step5.
-  - Suppose there are three Worker Nodes named A, B, and C.
-    - Notation
-      - Worker name's meta variable is X, Y.
-      - R[X]: Range of each Worker Node X.
-      - D[X,Y]: Rough sorted data of range R[Y] in X.
-  - 1. Master Node pick A and B.
-  - 2. Then A gives one block in D[A,B] to Master Node.
-  - 3. Then B gives one block in D[B,A] to Master Node.
-  - 4. Do this until there is no block to relocate for both A and B.
-  - 5. Master Node pick A and C, then do 2~4.
-  - 6. Master Node pick B and C, then do 2~4.
+- Master Node picks two worker nodes and changes its block until there is no further data to relocate.
+  - `block`: the unit of moving data.
+- For mor detailed explanations, please refer to the "Master Proposal" document.
+
+#### Example
+
+- Notation
+  - `R[X]`: Key range of worker node `X`.
+  - `D[X, Y]`: Roughly sorted data of range `R[Y]` in `X`, where `X` and `Y` are names of each worker.
+- Suppose there are three worker nodes named `A`, `B`, and `C`.
+
+1. Master node picks `A` and `B`.
+1. Then `A` provides one block in `D[A, B]` to master node.
+1. Then `B` gives one block in `D[B, A]` to master node.
+1. Do this until there are no more blocks to relocate for both `A` and `B`.
+1. Master node chooses `A` and `C`, then repeats steps 2-4.
+1. Master node selects `B` and `C`, then repeats steps 2-4.
 
 ### Second Phase
 
