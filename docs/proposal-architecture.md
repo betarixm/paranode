@@ -67,20 +67,20 @@ To efficiently utilize all the workers for sorting, the master node assigns task
 1. Master node chooses `A` and `C`, then repeats steps 2-4.
 1. Master node selects `B` and `C`, then repeats steps 2-4.
 
-### Second Phase
+### Second Phase: Sorting
 
-After data relocation, each Worker Node has its local data organized into partitions. In the second phase, all we have to do is just sorting the data within each partition. This automatically lead to overall sorting.
+After data relocation, each worker node has its local data organized into partitions. In the second phase, all that needs to be done is sorting the data within each partition, automatically leading to overall sorting.
 
-#### Step1: Local Parallel Sorting
+#### Step 1: Local Parallel Sorting
 
-- Each Worker does merge sort in parallel with respect to other Worker.
-- Detailed explaination for using multiple cores is in "Worker Proposal" document.
+- Each worker performs merge sort in parallel with respect to other workers.
+- Detailed explanations for utilizing multiple cores can be found in "Worker Proposal" document.
 
-#### Step2: Singal Sorting Completion to Master
+#### Step 2: Signaling Sorting Completion to Master Node
 
-- Upon completing the sort for all partitions, each Worker Node sends a signal to the Master Node indicating that it has finished sorting.
-- The Master Node waits until all Worker Nodes gives signal to it.
-- If all Worker Node gives signal to Master Node, program ends.
+- Upon completing the sorting for all partitions, each worker node sends a signal to the master node indicating that it has finished sorting.
+- The master node waits until all worker nodes gives signals to it.
+- If all worker nodes signal master node, the program ends.
 
 ## More Detail
 
