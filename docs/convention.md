@@ -23,7 +23,7 @@
     ```
 
 - **scalafix**:
-  - Adhere to the default configurations of `scalafmt` and `scalafix`.
+  - Adhere to the default configurations of `scalafix`.
   - Rules:
 
     ```properties
@@ -54,6 +54,7 @@
     - Features: `feat/kebab-case`
     - Fixes: `fix/kebab-case`
     - Chores: `chore/kebab-case`
+    - Documentations: `docs/kebab-case`
 
 ### Commit Messages
 
