@@ -1,4 +1,4 @@
-# Architecture Proposal Report
+# Architecture Proposal
 
 ## Problem Setting
 
@@ -26,7 +26,7 @@ Basically we are going to use merge sort. To fully exploit N number of Workers, 
 Now it's time to deep dive into each two phase with specific step.
 
 ### First Phase 
-To exploit all the Workers in parallel, we have to distribute the sort-thing into each Worker.
+To exploit all the Workers in parallel, we have to distribute the recordes into each Worker.
 
 #### Step1: Data Sampling
 - Sample a small subset of records from each Worker Node.
@@ -39,10 +39,12 @@ To exploit all the Workers in parallel, we have to distribute the sort-thing int
 #### Step4: Make Group(Partition)
 - Each Worker Node then divide its local data according to the received key ranges.
     - Any key that falls within a paricular range will be grouped together.
+- Detailed explaination for using multiple cores is in "Worker Proposal" document.
 #### Step5: Relocating
 - Master Node pick two Worker Nodes and change its block until there is nothing to relocate.
     - block: the unit of moving data.
-- Example
+- Detailed explaination is in "Master Proposal" document.
+- Example for brief understaning of Step5.
     - Suppose there are three Worker Nodes named A, B, and C.
         - Notation
             - Worker name's meta variable is X, Y.
@@ -57,13 +59,15 @@ To exploit all the Workers in parallel, we have to distribute the sort-thing int
 
 ### Second Phase
 
-Now it's time to real sort in each Worker machine.
-How to expliot Multiple Cores?
+After data relocation, each Worker Node has its local data organized into partitions. In the second phase, all we have to do is just sorting the data within each partition. This automatically lead to overall sorting. 
 
+#### Step1: Local Parallel Sorting
+- Each Worker does merge sort in parallel with respect to other Worker.
+- Detailed explaination for using multiple cores is in "Worker Proposal" document.
 
-## Implementation of Each Node
-### Master Node
-### Worker Node
-
+#### Step2: Singal Sorting Completion to Master
+- Upon completing the sort for all partitions, each Worker Node sends a signal to the Master Node indicating that it has finished sorting.
+- The Master Node waits until all Worker Nodes gives signal to it.
+- If all Worker Node gives signal to Master Node, program ends.
 
 
