@@ -16,14 +16,17 @@
 - **scalafmt**:
   - Version: `3.7.14`
   - Configuration:
-    ```
+
+    ```properties
     version = 3.7.14
     runner.dialect=scala213source3
     ```
+
 - **scalafix**:
   - Adhere to the default configurations of `scalafmt` and `scalafix`.
   - Rules:
-    ```
+
+    ```properties
     rules = [
       DisableSyntax,
       ExplicitResultTypes,
@@ -56,7 +59,7 @@
 
 Follow the guidelines provided by [Conventional Commits](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional). Commit messages should have the following structure:
 
-```
+```plaintext
 <type>[optional scope]: <description>
 
 [optional body]
@@ -64,7 +67,7 @@ Follow the guidelines provided by [Conventional Commits](https://github.com/conv
 [optional footer]
 ```
 
-#### Commit Types:
+#### Commit Types
 
 - `fix`: Patching a bug in the codebase. Related to PATCH in semantic versioning.
 - `feat`: Adding a new feature. Related to MINOR in semantic versioning.
