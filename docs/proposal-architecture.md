@@ -82,50 +82,48 @@ After data relocation, each worker node has its local data organized into partit
 - The master node waits until all worker nodes gives signals to it.
 - If all worker nodes signal master node, the program ends.
 
-## More Detail
+## More Details
 
-Until now, we got a big picture of achieving Goal, mainly about answering the question of "How to corrodinate Multiple Nodes?". The four Proposal document below will give you detailed explaination for each subject.
+So far, this document suggest a big picture to achieve our goal, mainly about answering the question of "How to Coordinate Multiple Nodes?". The four Proposal document below will provide detailed explanations for each subject.
 
 ### Data Structure Proposal
 
-- Define fundamental data structure that we will use through this project.
+- Define fundamental data structure that we will use throughout this project.
 
 ### RPC Protocol Proposal
 
-- Data Sample Request and Reply
-  - Master sends a request to each Worker.
-  - Each Worker replies with a set of sample keys.
+- Data Sample Request and Response
+  - Master sends a request to each worker.
+  - Each worker replies with a set of sample keys.
 - Key Range Broadcast
-  - Master broadcasts the key ranges to all Worker Nodes.
-- Relocation Request and Reply
+  - Master broadcasts the key ranges to all worker nodes.
+- Relocation Request and Response
   - Master sends a request for data block movement.
-  - Worker sends a reply the data block that will relocated.
+  - Worker sends a reply with the data block that will be relocated.
 - Sorting Complete Signal
-  - Worker sends a signal to the Master.
-  - Master keeps a count and waits for signals from all Workers.
+  - Worker sends a signal to the master.
+  - Master keeps a count and waits for signals from all workers.
 
 ### Worker Proposal
 
 - Data Sampling
-  - On request from the Master Node, the Worker sends back a small subset of records.
+  - On request from the master node, the worker sends back a small subset of records.
 - Key Range Partitioning
-  - Upon receiving key ranges, partition data based on those ranges.
-  - Use parallelism
+  - Upon receiving key ranges, partition data based on those ranges and utilize parallelism
 - Local Sorting
-  - Perform merge sort on each partition.
-  - Use parallelism
-- Signalling
-  - Once sorting is done, send a signal to the Master Node.
+  - Perform merge sort on each partition using parallelism
+- Signaling
+  - Once sorting is completed, send a signal to the master node.
 
 ### Master Proposal
 
 - Data Sampling
-  - Request a set of sample records from each Worker Node.
+  - Request a set of sample records from each worker node.
 - Key Range Estimation
   - Sort the keys and divide them into ranges.
 - Key Range Broadcast
-  - Broadcast the key ranges to all Worker Nodes.
+  - Broadcast the key ranges to all worker nodes.
 - Block Relocation
-  - Continuously pick two Workers and oversee the exchange of data blocks until there is nothing left to relocate.
+  - Continuously select two workers and oversee the exchange of data blocks until there is nothing left to relocate.
 - Waiting Mechanism
-  - Wait for the signal from all Worker Nodes that they have completed sorting.
+  - Wait for the signal from all worker nodes that they have completed sorting.
