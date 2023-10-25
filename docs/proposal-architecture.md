@@ -21,12 +21,7 @@ Implementing system that can sort records stored across **multiple disks**, usin
 
 ## Method
 
-Basically we are going to use merge sort. To fully exploit N number of Workers, we have to sort parallel in each Worker. So hole procedure could be divided into two phase as below.
-
-1. Relocate data in each Worker.
-2. Each Worker sort its relocated data in each Worker's disk.
-
-Now it's time to deep dive into each two phase with specific step.
+To fully exploiting the `N` number of workers, we should sort data in a distributed manner on each worker. To accomplish this, we propose dividing the entire procedure into two phases, as outlined below.
 
 ### First Phase
 
