@@ -4,7 +4,7 @@
 
 ### Goal
 
-- Implement system that can sort key/value records stored across **multiple disks**, using **multiple machines** with **distributed/parallel** programming
+Implementing system that can sort records stored across **multiple disks**, using **multiple machines** with **distributed/parallel** programming.
 
 ### Condition
 
