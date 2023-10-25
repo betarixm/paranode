@@ -1,6 +1,8 @@
 # Architecture Proposal
 
-## Problem Setting
+## Problem Description
+
+### Condition
 
 - Data
   - get data from <http://www.ordinal.com/gensort.html>
@@ -13,7 +15,7 @@
   - Input: bunch of 32MB files which is allocated in each Worker
   - Output: ordering of ???MB files with sorted data, in each Worker
 
-## Goal
+### Goal
 
 - Implement system that can sort key/value records stored across **multiple disks**, using **multiple machines** with **distributed/parallel** programming
 
