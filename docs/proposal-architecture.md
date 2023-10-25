@@ -70,4 +70,42 @@ After data relocation, each Worker Node has its local data organized into partit
 - The Master Node waits until all Worker Nodes gives signal to it.
 - If all Worker Node gives signal to Master Node, program ends.
 
+## More Detail
+Until now, we got a big picture of achieving Goal, mainly about answering the question of "How to corrodinate Multiple Nodes?". The four Proposal document below will give you detailed explaination for each subject.
 
+### Data Structure Proposal
+- Define fundamental data structure that we will use through this project.
+### RPC Protocol Proposal
+- Data Sample Request and Reply
+    - Master sends a request to each Worker.
+    - Each Worker replies with a set of sample keys.
+- Key Range Broadcast
+    - Master broadcasts the key ranges to all Worker Nodes.
+- Relocation Request and Reply
+    - Master sends a request for data block movement.
+    - Worker sends a reply the data block that will relocated.
+- Sorting Complete Signal
+    - Worker sends a signal to the Master.
+    - Master keeps a count and waits for signals from all Workers.
+### Worker Proposal
+- Data Sampling
+    - On request from the Master Node, the Worker sends back a small subset of records.
+- Key Range Partitioning
+    - Upon receiving key ranges, partition data based on those ranges.
+    - Use parallelism
+- Local Sorting 
+    - Perform merge sort on each partition.
+    - Use parallelism
+- Signalling
+    - Once sorting is done, send a signal to the Master Node.
+### Master Proposal
+-  Data Sampling
+    -  Request a set of sample records from each Worker Node.
+- Key Range Estimation
+    - Sort the keys and divide them into ranges.
+- Key Range Broadcast
+    - Broadcast the key ranges to all Worker Nodes.
+- Block Relocation 
+    - Continuously pick two Workers and oversee the exchange of data blocks until there is nothing left to relocate.
+- Waiting Mechanism
+    - Wait for the signal from all Worker Nodes that they have completed sorting.
