@@ -44,12 +44,13 @@ To efficiently utilize all the workers for sorting, the master node assigns task
 
 #### Step 3: Broadcast Key Ranges
 
-- Master node broadcasts the estimated key ranges to all worker nodes.
+- Master node broadcasts the estimated key ranges to all worker nodes and waits for approved signal for each worker.
 
 #### Step 4: Make Group(Partition)
 
+- Master node signals each worker node to make group.
 - Each worker node then divides its local data according to the received key ranges.
-- Any key falling within a particular range is grouped together.
+  - Any key falling within a particular range is grouped together.
 - Detailed explanations for utilizing multiple cores can be found in the "Worker Proposal" document.
 
 #### Step 5: Exchanging
