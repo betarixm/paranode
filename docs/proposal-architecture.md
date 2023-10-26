@@ -41,37 +41,20 @@ To efficiently utilize all the workers for sorting, the master node assigns task
 
 - Master node sorts all the received keys.
 - Master node then divide the sorted keys into `n` ranges, where `n` is the number of worker nodes.
-
+    
 #### Step 3: Broadcast Key Ranges
 
 - Master node broadcasts the estimated key ranges to all worker nodes and waits for approved signal for each worker.
 
-#### Step 4: Make Group(Partition)
+#### Step 4: Exchanging
 
-- Master node signals each worker node to make group.
-- Each worker node then divides its local data according to the received key ranges.
-  - Any key falling within a particular range is grouped together.
+- Master node signals each worker node to exchange each other.
+- Worker nodes communicate each other.
+- For communicating, each worker iterates over its 32MB files and process...
+    - If that file's key range is in worker's key range, continue.
+    - If not, send that file to the other worker.
+    - Any key falling within a particular range will be placed together.
 - Detailed explanations for utilizing multiple cores can be found in the "Worker Proposal" document.
-
-#### Step 5: Exchanging
-
-- Master Node picks two worker nodes and changes its block until there is no further data to relocate.
-  - `block`: the unit of moving data.
-- For mor detailed explanations, please refer to the "Master Proposal" document.
-
-    #### Example
-
-    - Notation
-      - `R[X]`: Key range of worker node `X`.
-      - `D[X, Y]`: Roughly sorted data of range `R[Y]` in `X`, where `X` and `Y` are names of each worker.
-    - Suppose there are three worker nodes named `A`, `B`, and `C`.
-
-    1. Master node picks `A` and `B`.
-    1. Then `A` provides one block in `D[A, B]` to master node.
-    1. Then `B` gives one block in `D[B, A]` to master node.
-    1. Do this until there are no more blocks to relocate for both `A` and `B`.
-    1. Master node chooses `A` and `C`, then repeats steps 2-4.
-    1. Master node selects `B` and `C`, then repeats steps 2-4.
 
 ### Second Phase: Sorting
 
