@@ -31,11 +31,11 @@ To efficiently utilize all the workers for sorting, the master node assigns task
 
 - Sample a small subset of records from each worker node.
 - Send key of these samples to the master node.
-    - We have to send sufficient number of keys, not to re-estimate the key ranges.
+  - We have to send sufficient number of keys, not to re-estimate the key ranges.
 - Reason for sampling
-    - There are multiple worker nodes independent of each other and we have to exploit all of the worker in parallel.
-    - For each worker's meaningful sort, that leads to all system's sort, we have to allocate the range that worker will compute.
-    - As we don't know the exact distribution of keys, this step is needed for allocating range of key to each worker.
+  - There are multiple worker nodes independent of each other and we have to exploit all of the worker in parallel.
+  - For each worker's meaningful sort, that leads to all system's sort, we have to allocate the range that worker will compute.
+  - As we don't know the exact distribution of keys, this step is needed for allocating range of key to each worker.
 
 #### Step 2: Key Range Estimation
 
