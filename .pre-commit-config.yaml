@@ -1,0 +1,22 @@
+default_language_version:
+  ruby: 2.7.2
+
+repos:
+  - repo: local
+    hooks:
+      - id: sbt-scalafmt
+        name: sbt-scalafmt
+        entry: sbt -v "scalafmtCheck"
+        language: system
+        types: [text]
+        pass_filenames: false
+      - id: sbt-scalafix
+        name: sbt-scalafix
+        entry: sbt -v "scalafixAll --check"
+        language: system
+        types: [text]
+        pass_filenames: false
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.13.0
+    hooks:
+      - id: markdownlint
