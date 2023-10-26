@@ -31,11 +31,11 @@ To efficiently utilize all the workers for sorting, the master node assigns task
 
 - Sample a small subset of records from each worker node.
 - Send key of these samples to the master node.
-    - We have to send sufficient number of keys, not to re-estimate the key ranges.
+  - We have to send sufficient number of keys, not to re-estimate the key ranges.
 - Reason for sampling
-    - There are multiple worker nodes independent of each other and we have to exploit all of the worker in parallel.
-    - For each worker's meaningful sort, that leads to all system's sort, we have to allocate the range that worker will compute.
-    - As we don't know the exact distribution of keys, this step is needed for allocating range of key to each worker.
+  - There are multiple worker nodes independent of each other and we have to exploit all of the worker in parallel.
+  - For each worker's meaningful sort, that leads to all system's sort, we have to allocate the range that worker will compute.
+  - As we don't know the exact distribution of keys, this step is needed for allocating range of key to each worker.
 
 #### Step 2: Key Range Estimation
 
@@ -59,12 +59,12 @@ To efficiently utilize all the workers for sorting, the master node assigns task
   - `block`: the unit of moving data.
 - For mor detailed explanations, please refer to the "Master Proposal" document.
 
-    #### Example
+#### Example
 
-    - Notation
-      - `R[X]`: Key range of worker node `X`.
-      - `D[X, Y]`: Roughly sorted data of range `R[Y]` in `X`, where `X` and `Y` are names of each worker.
-    - Suppose there are three worker nodes named `A`, `B`, and `C`.
+- Notation
+  - `R[X]`: Key range of worker node `X`.
+  - `D[X, Y]`: Roughly sorted data of range `R[Y]` in `X`, where `X` and `Y` are names of each worker.
+- Suppose there are three worker nodes named `A`, `B`, and `C`.
 
     1. Master node picks `A` and `B`.
     1. Then `A` provides one block in `D[A, B]` to master node.
