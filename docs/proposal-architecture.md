@@ -62,19 +62,19 @@ To efficiently utilize all the workers for sorting, the master node assigns task
   - `block`: the unit of moving data.
 - For mor detailed explanations, please refer to the "Master Proposal" document.
 
-#### Example
+##### Example
 
 - Notation
   - `R[X]`: Key range of worker node `X`.
   - `D[X, Y]`: Roughly sorted data of range `R[Y]` in `X`, where `X` and `Y` are names of each worker.
 - Suppose there are three worker nodes named `A`, `B`, and `C`.
 
-    1. Master node picks `A` and `B`.
-    1. Then `A` provides one block in `D[A, B]` to master node.
-    1. Then `B` gives one block in `D[B, A]` to master node.
-    1. Do this until there are no more blocks to relocate for both `A` and `B`.
-    1. Master node chooses `A` and `C`, then repeats steps 2-4.
-    1. Master node selects `B` and `C`, then repeats steps 2-4.
+1. Master node picks `A` and `B`.
+1. Then `A` provides one block in `D[A, B]` to master node.
+1. Then `B` gives one block in `D[B, A]` to master node.
+1. Do this until there are no more blocks to relocate for both `A` and `B`.
+1. Master node chooses `A` and `C`, then repeats steps 2-4.
+1. Master node selects `B` and `C`, then repeats steps 2-4.
 
 ### Second Phase: Sorting
 
