@@ -41,7 +41,7 @@ To efficiently utilize all the workers for sorting, the master node assigns task
 
 - Master node sorts all the received keys.
 - Master node then divide the sorted keys into `n` ranges, where `n` is the number of worker nodes.
-    
+
 #### Step 3: Broadcast Key Ranges
 
 - Master node broadcasts the estimated key ranges to all worker nodes and waits for approved signal for each worker.
@@ -51,9 +51,9 @@ To efficiently utilize all the workers for sorting, the master node assigns task
 - Master node signals each worker node to exchange each other.
 - Worker nodes communicate each other.
 - For communicating, each worker iterates over its 32MB files and process...
-    - If that file's key range is in worker's key range, continue.
-    - If not, send that file to the other worker.
-    - Any key falling within a particular range will be placed together.
+  - If that file's key range is in worker's key range, continue.
+  - If not, send that file to the other worker.
+  - Any key falling within a particular range will be placed together.
 - Detailed explanations for utilizing multiple cores can be found in the "Worker Proposal" document.
 
 #### Step 5: Exchanging
