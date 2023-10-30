@@ -1,4 +1,4 @@
-package kr.ac.postech.cs434.green
+package kr.ac.postech.paranode
 
 object Main {
   def main(args: Array[String]): Unit = {
