@@ -2,80 +2,90 @@
 
 ## Overview
 
-Master is responsible for orchestrating the sorting process across multiple worker nodes. Master Node...
+Master is responsible for orchestrating the sorting process across multiple worker nodes. Master node:
 
-1. performs key range estimation.
-1. distributes the ranges to the workers.
-1. waits for the completion signals from the workers.
+1. Performs key range estimation.
+1. Distributes the ranges to the workers.
+1. Waits for the completion signals from the workers.
 
-## Class: MasterNode
+## Class: Master
 
-### Member: MasterInfo
+### Member: Master Info
 
-- Type: MasterMetadata
+- Type: `MasterMetadata`
 - Contains master's IP address and port number.
 
-### Member: WorkersInfo
+### Member: Workers
 
 - Type: `List[WorkerMetadata]`
 - Contains all the worker's IP address and port number.
 - It doesn't contain key range information.
 - Its length is same with number of worker nodes.
 
-### Method: requsetSamples
+### Method: Healthcheck
+
+- Type: `(workersInfo: List[WorkerMetadata]): Boolean`
+- Check all workers online.
+
+### Method: Sample
 
 - Type: `(workersInfo: List[WorkerMetadata]): List[Key]`
-- Get sample of keys from all worker node.
+- Get samples of keys from all worker node.
 - For each worker, get sample of keys as `List[Key]` and flatten the result.
 - Master waits for the samples for each worker.
 
-### Method: sortKeys
+### Method: Sort Keys
 
 - Type: `(unsortedKeys: List[Key]): List[Key]`
 - Sort `unsortedKeys` in ascending order.
 
-### Method: estimateKeyRanges
+### Method: Estimate Key Ranges
 
 - Type: `(sortedKeys: List[Key]): List[KeyRange]`
 - Split `sortedKeys` so that we can get `WorkerAddressList.len()` of range.
 
-### Method: makeWorkerList
+### Method: Create Worker List From Key Ranges
 
 - Type: `(workersInfo: List[WorkerMetadata], estimatedKeyRangeList: List[KeyRange]): List[WorkerMetadata]`
 - Augment `workersInfo` using `estimatedKeyRangeList` so that the output's entry has binding for each worker with one key range.
 
-### Method: broadcastKeyRange
+### Method: Broadcast Key Ranges
 
-- Type: `(workersInfo: List[WorkerMetadata]):Unit`
-- Signal the information of estimated key range to all workers.
-- Master waits for the acceptance(?) signal for each worker.
+- Type: `(workersInfo: List[WorkerMetadata]): Unit`
+- Signal estimated key ranges to all workers.
+- Signaled workers should make partitions.
+- Master waits for the response for each worker.
 
-### Method: makeRecordsToPlaceItsCorrectWorker
+### Method: Exchange
 
-- Type: `(workersInfo: List[WorkerMetadata]):Unit`
+- Type: `(workersInfo: List[WorkerMetadata]): Unit`
 - Signal all workers to have only its own key ranges.
-- Workers exchange `block`s each other.
-  - Exchanging `block` is consist of sorted `Records` and its total size will be very small size.
-- Master waits for the done(?) signal for each worker.
+- Workers exchange `Block`s each other.
+  - Exchanging `Block` is consist of sorted `Record`s and its total size will be affordable size.
+- Master waits for the response for each worker.
 
-### Method: signalAllWorkersToMergeAndWaitUntilAllWorkerFinishSorting
+### Method: Finalize
 
-- Type: `(workerList: List[WorkerMetadata]):Unit`
+- Type: `(workerList: List[WorkerMetadata]): Unit`
 - Signal all workers to merge its containing blocks.
   - We are using merge sort and each worker previously sort its block.
   - So each sufficient to merge blocks in each worker.
-- Master waits for the done(?) signal for each worker.
+- Master waits for the response for each worker.
 
-## Object: Master
+### Method: Main
 
-### Method: main
+- Type: `(): Unit`
 
-- Type: ():Unit
-- Use all the public method in class `MasterNode` to make all things work.
+1. Register all workers and check its health.
+1. Sample keys from workers.
+1. Estimate key ranges based on sorted sampled keys.
+1. Broadcast key ranges to workers and request workers to make partitions.
+1. Request workers to exchange
+1. Request workers to finalize
 
 ## Some Assumption
 
-- Estimated key ranges are always fine in terms of distributing `Ranges`.
+- Estimated key ranges are always fine in terms of distributing `Record`s.
   - We could add algorithm to make proper key ranges if needed.
-- Exception 'Out of disk space' will not be occured.
-  - This is because we assume estimated key ranges are always fine and we exchange `block` which is very small size.
+- Exception 'Out of disk space' will not be occurred.
+  - This is because we assume estimated key ranges are always fine and we exchange `Block` which is affordable size.
