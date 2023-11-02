@@ -38,17 +38,12 @@
 
 ## Object: Exchange RPC Server
 
-### Method: Save Block
+### Handler: Save Block
 
-- Type: `(block: Block): Unit`
+- Type: `(block: Block): Response[Boolean]`
 - Saves the given block sent over the RPC connection.
 
 ## Object: Worker RPC Server
-
-### Handler: Healthcheck
-
-- Type: `(): Response[Boolean]`
-- Returns any message if a worker is ready.
 
 ### Handler: Sample
 
@@ -82,3 +77,4 @@
 1. Init blocks from given directories.
 1. Spawn exchange RPC server.
 1. Spawn worker RPC server.
+1. Register itself to given master.
