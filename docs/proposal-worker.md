@@ -36,26 +36,49 @@
 - Type: `(): (directory: Directory): Directory`
 - Write the serialized data into the given directory and return the updated directory.
 
-## Object: RPC Server
+## Object: Exchange RPC Server
 
 ### Method: Save Block
 
 - Type: `(block: Block): Unit`
 - Saves the given block sent over the RPC connection.
 
-## Object: Worker
+## Object: Worker RPC Server
+
+### Handler: Healthcheck
+
+- Type: `(): Response[Boolean]`
+- Returns any message if a worker is ready.
+
+### Handler: Sample
+
+- Type: `(): Response[List[Key]]`
+- Return sampled keys of a worker.
+
+### Handler: Sort
+
+- Type: `(): Response[Boolean]`
+- Sort a worker's blocks.
+
+### Handler: Partition
+
+- Type: `(workers: List[WorkerMetadata]): Response[Boolean]`
+- Make partitions based on given workers' metadata.
+
+### Handler: Exchange
+
+- Type: `(workers: List[WorkerMetadata]): Response[Boolean]`
+- Send partitions to dedicated workers.
+
+### Handler: Finalize
+
+- Type: `(): Response[Boolean]`
+- Merge saved partitions and write into files.
 
 ### Method: Main
 
 - Type: `(): Unit`
 
-1. Create blocks based on the given input directories.
-1. Make a sorted version of the blocks using the `Blocks.sorted` method.
-1. Partition the sorted blocks and obtain a list of worker metadata.
-1. Signal the master node that the worker is ready.
-1. Wait for a signal that enables data exchange, including workers' metadata.
-1. Spawn an RPC server for receiving partitions from other workers.
-1. Send blocks to other workers, iterating over partitions.
-1. Reconstruct blocks with saved partitions.
-1. Merge partitions and save them into files.
-1. Signal the master node that the worker is done.
+1. Init blocks from given directories.
+1. Spawn exchange RPC server.
+1. Spawn worker RPC server.
