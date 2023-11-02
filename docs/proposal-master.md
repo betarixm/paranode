@@ -8,6 +8,13 @@ Master is responsible for orchestrating the sorting process across multiple work
 1. Distributes the ranges to the workers.
 1. Waits for the completion signals from the workers.
 
+## Object: Master RPC Server
+
+### Handler: Register
+
+- Type: `(worker: WorkerMetadata): Response[Boolean]`
+- Register given worker.
+
 ## Class: Master
 
 ### Member: Master Info
@@ -22,10 +29,10 @@ Master is responsible for orchestrating the sorting process across multiple work
 - It doesn't contain key range information.
 - Its length is same with number of worker nodes.
 
-### Method: Healthcheck
+### Method: Wait for Workers
 
-- Type: `(workersInfo: List[WorkerMetadata]): Boolean`
-- Check all workers online.
+- Type: `(): List[WorkerMetadata]`
+- Wait for given number of workers to be registered.
 
 ### Method: Sample
 
@@ -76,7 +83,7 @@ Master is responsible for orchestrating the sorting process across multiple work
 
 - Type: `(): Unit`
 
-1. Register all workers and check its health.
+1. Wait for workers to be registered.
 1. Sample keys from workers.
 1. Estimate key ranges based on sorted sampled keys.
 1. Broadcast key ranges to workers and request workers to make partitions.
