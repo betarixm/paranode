@@ -1,4 +1,4 @@
-name: Lint
+name: CI
 
 on:
   push:
@@ -6,7 +6,18 @@ on:
       - "**"
 
 jobs:
-  lint-and-format:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 20
+          cache: sbt
+      - name: Run tests
+        run: sbt -v "test"
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
