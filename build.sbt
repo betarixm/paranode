@@ -13,7 +13,12 @@ lazy val commonSettings = Seq(
   idePackagePrefix := Some("kr.ac.postech.paranode"),
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
-  scalacOptions += "-Wunused"
+  scalacOptions += "-Wunused",
+  libraryDependencies ++= Seq(
+    "org.scalactic" %% "scalactic" % "3.2.17",
+    "org.scalatest" %% "scalatest" % "3.2.17" % "test",
+    "org.scalatest" %% "scalatest-flatspec" % "3.2.17" % "test"
+  )
 )
 
 lazy val root = (project in file("."))
