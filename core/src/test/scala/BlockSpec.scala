@@ -2,6 +2,9 @@ package kr.ac.postech.paranode.core
 
 import org.scalatest.flatspec.AnyFlatSpec
 
+import java.io.File
+import scala.io.Source
+
 class BlockSpec extends AnyFlatSpec {
   implicit class ComparableBlock(block: Block) {
     def is(that: Block): Boolean = {
@@ -20,6 +23,39 @@ class BlockSpec extends AnyFlatSpec {
         LazyList[Record](
           new Record(new Key(Array(0)), Array(1, 2, 3)),
           new Record(new Key(Array(4)), Array(5, 6, 7))
+        )
+      )
+
+    assert(block is expectedBlock)
+  }
+
+  it should "be constructable from source" in {
+    val source = Source.fromBytes(Array(0, 1, 2, 3, 4, 5, 6, 7))
+    val block =
+      Block.fromSource(source, keyLength = 1, valueLength = 3)
+
+    val expectedBlock =
+      new Block(
+        LazyList[Record](
+          new Record(new Key(Array(0)), Array(1, 2, 3)),
+          new Record(new Key(Array(4)), Array(5, 6, 7))
+        )
+      )
+
+    assert(block is expectedBlock)
+  }
+
+  it should "be constructable from a path" in {
+    val path = getClass.getResource("/block-spec-8.raw").getPath
+
+    val block =
+      Block.fromPath(path, keyLength = 1, valueLength = 3)
+
+    val expectedBlock =
+      new Block(
+        LazyList[Record](
+          new Record(new Key(Array(0x30)), Array(0x31, 0x32, 0x33)),
+          new Record(new Key(Array(0x34)), Array(0x35, 0x36, 0x37))
         )
       )
 
