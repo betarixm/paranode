@@ -3,6 +3,14 @@ package kr.ac.postech.paranode.core
 import org.scalatest.flatspec.AnyFlatSpec
 
 class BlockSpec extends AnyFlatSpec {
+  implicit class ComparableBlock(block: Block) {
+    def is(that: Block): Boolean = {
+      block.records
+        .zip(that.records)
+        .forall(records => records._1 is records._2)
+    }
+  }
+
   "Block" should "be constructable from bytes" in {
     val bytes = LazyList[Byte](0, 1, 2, 3, 4, 5, 6, 7)
     val block = Block.fromBytes(bytes, keyLength = 1, valueLength = 3)
@@ -15,12 +23,6 @@ class BlockSpec extends AnyFlatSpec {
         )
       )
 
-    val firstRecord = block.records.head
-    val secondRecord = block.records(1)
-    val expectedFirstRecord = expectedBlock.records.head
-    val expectedSecondRecord = expectedBlock.records(1)
-
-    assert(firstRecord is expectedFirstRecord)
-    assert(secondRecord is expectedSecondRecord)
+    assert(block is expectedBlock)
   }
 }
