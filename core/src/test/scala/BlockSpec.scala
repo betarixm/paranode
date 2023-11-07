@@ -75,4 +75,26 @@ class BlockSpec extends AnyFlatSpec {
         0x7)
     )
   }
+
+  it should "be writable to a file" in {
+    val block = new Block(
+      LazyList(
+        new Record(new Key(Array(0x0)), Array(0x1, 0x2, 0x3)),
+        new Record(new Key(Array(0x4)), Array(0x5, 0x6, 0x7))
+      )
+    )
+
+    val temporaryFile = File.createTempFile("block-spec-temp", ".raw")
+
+    val result = block.writeTo(temporaryFile.getPath)
+
+    val source = Source.fromFile(result)
+
+    temporaryFile.deleteOnExit()
+
+    assert(
+      source.toArray sameElements Array[Char](0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6,
+        0x7)
+    )
+  }
 }

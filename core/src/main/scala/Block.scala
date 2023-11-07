@@ -1,4 +1,8 @@
 package kr.ac.postech.paranode.core
+
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import scala.io.Source
 import scala.reflect.io.Path
 
@@ -30,4 +34,15 @@ object Block {
 
 class Block(val records: LazyList[Record]) extends AnyVal {
   def toChars: LazyList[Char] = records.flatMap(_.toChars)
+
+  def writeTo(path: Path): File = {
+    val file = new File(path.toString)
+    val writer = new BufferedOutputStream(new FileOutputStream(file))
+
+    try {
+      toChars.foreach(writer.write(_))
+      file
+      // TODO: Handle exceptions
+    } finally writer.close()
+  }
 }
