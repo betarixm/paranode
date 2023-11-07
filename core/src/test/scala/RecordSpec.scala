@@ -3,6 +3,12 @@ package kr.ac.postech.paranode.core
 import org.scalatest.flatspec.AnyFlatSpec
 
 class RecordSpec extends AnyFlatSpec {
+  "Record" should "be serializable as chars" in {
+    val record = new Record(new Key(Array(0x1, 0x2)), Array(0x3, 0x4))
+
+    assert(record.toChars sameElements Array(0x1, 0x2, 0x3, 0x4))
+  }
+
   "Records" should "be same if elements are same" in {
     val record = new Record(new Key(Array(0x1, 0x2)), Array(0x3, 0x4))
     val recordWithSameMembers =
