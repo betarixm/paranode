@@ -8,4 +8,6 @@ object Block {
   ): Block = new Block(Record.fromBytesToRecords(bytes, keyLength, valueLength))
 }
 
-class Block(val records: LazyList[Record]) extends AnyVal {}
+class Block(val records: LazyList[Record]) extends AnyVal {
+  def toChars: LazyList[Char] = records.flatMap(_.toChars)
+}

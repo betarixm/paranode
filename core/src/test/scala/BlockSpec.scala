@@ -25,4 +25,18 @@ class BlockSpec extends AnyFlatSpec {
 
     assert(block is expectedBlock)
   }
+
+  it should "be serializable as chars" in {
+    val block = new Block(
+      LazyList(
+        new Record(new Key(Array(0x0)), Array(0x1, 0x2, 0x3)),
+        new Record(new Key(Array(0x4)), Array(0x5, 0x6, 0x7))
+      )
+    )
+
+    assert(
+      block.toChars sameElements Array[Char](0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6,
+        0x7)
+    )
+  }
 }
