@@ -22,4 +22,16 @@ class RecordSpec extends AnyFlatSpec {
     assert(recordFromString is record)
     assert(recordFromBytes is record)
   }
+
+  they should "be constructable from stream of byte" in {
+    val records =
+      Record.fromBytesToRecords(
+        LazyList[Byte](0, 1, 2, 3, 4, 5, 6, 7),
+        keyLength = 1,
+        valueLength = 3
+      )
+
+    assert(records.head is Record.fromBytes(Array(0, 1, 2, 3), keyLength = 1))
+    assert(records(1) is Record.fromBytes(Array(4, 5, 6, 7), keyLength = 1))
+  }
 }
