@@ -16,8 +16,10 @@ class RecordSpec extends AnyFlatSpec {
 
   they should "be same if elements are same regardless of constructors" in {
     val recordFromString = Record.fromString("BEEF", 1)
+    val recordFromBytes = Record.fromBytes(Array(0x42, 0x45, 0x45, 0x46), 1)
     val record = new Record(Key.fromString("B"), Array(0x45, 0x45, 0x46))
 
     assert(recordFromString is record)
+    assert(recordFromBytes is record)
   }
 }
