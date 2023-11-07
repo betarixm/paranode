@@ -16,8 +16,22 @@ class RecordSpec extends AnyFlatSpec {
 
   they should "be same if elements are same regardless of constructors" in {
     val recordFromString = Record.fromString("BEEF", 1)
+    val recordFromBytes = Record.fromBytes(Array(0x42, 0x45, 0x45, 0x46), 1)
     val record = new Record(Key.fromString("B"), Array(0x45, 0x45, 0x46))
 
     assert(recordFromString is record)
+    assert(recordFromBytes is record)
+  }
+
+  they should "be constructable from stream of byte" in {
+    val records =
+      Record.fromBytesToRecords(
+        LazyList[Byte](0, 1, 2, 3, 4, 5, 6, 7),
+        keyLength = 1,
+        valueLength = 3
+      )
+
+    assert(records.head is Record.fromBytes(Array(0, 1, 2, 3), keyLength = 1))
+    assert(records(1) is Record.fromBytes(Array(4, 5, 6, 7), keyLength = 1))
   }
 }

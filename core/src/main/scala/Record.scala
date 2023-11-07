@@ -1,9 +1,28 @@
 package kr.ac.postech.paranode.core
 
 object Record {
-  def fromString(string: String, keyLength: Int = 10): Record = {
-    val (rawKey, value) = string.getBytes().splitAt(keyLength)
+  def fromString(string: String, keyLength: Int = 10): Record =
+    Record.fromBytes(string.getBytes(), keyLength)
+
+  def fromBytes(bytes: Array[Byte], keyLength: Int = 10): Record = {
+    val (rawKey, value) = bytes.splitAt(keyLength)
     new Record(new Key(rawKey), value)
+  }
+
+  def fromBytesToRecords(
+      bytes: LazyList[Byte],
+      keyLength: Int = 10,
+      valueLength: Int = 90
+  ): LazyList[Record] = {
+    val recordLength = keyLength + valueLength
+    val (head, tail) = bytes.splitAt(recordLength)
+
+    Record.fromBytes(head.toArray, keyLength) #:: Record
+      .fromBytesToRecords(
+        tail,
+        keyLength,
+        valueLength
+      )
   }
 }
 
