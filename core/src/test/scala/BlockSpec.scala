@@ -97,4 +97,45 @@ class BlockSpec extends AnyFlatSpec {
         0x7)
     )
   }
+
+  it should "be able to make partition" in {
+    val keyStart_1 = new Key(Array(0x0))
+    val keyEnd_1 = new Key(Array(0x4))
+    val keyRange_1 = new KeyRange(keyStart_1, keyEnd_1)
+    val workerMetadata_1 = WorkerMetadata("1.1.1.1", 123, Option(keyRange_1))
+
+    val keyStart_2 = new Key(Array(0x5))
+    val keyEnd_2 = new Key(Array(0x9))
+    val keyRange_2 = new KeyRange(keyStart_2, keyEnd_2)
+    val workerMetadata_2 = WorkerMetadata("2.2.2.2", 123, Option(keyRange_2))
+
+    val workers = List(workerMetadata_1, workerMetadata_2)
+
+    val block1 = new Block(
+      LazyList(
+        new Record(new Key(Array(0x1)), Array(0x1, 0x2, 0x3)),
+        new Record(new Key(Array(0x2)), Array(0x8, 0x9, 0x7))
+      )
+    )
+    val block2 = new Block(
+      LazyList(
+        new Record(new Key(Array(0x6)), Array(0x5, 0x6, 0x7))
+      )
+    )
+    val blocks = new Block(
+      LazyList(
+        new Record(new Key(Array(0x1)), Array(0x1, 0x2, 0x3)),
+        new Record(new Key(Array(0x6)), Array(0x5, 0x6, 0x7)),
+        new Record(new Key(Array(0x2)), Array(0x8, 0x9, 0x7))
+      )
+    )
+    val result = blocks.partition(workers)
+
+    val answer = List(
+      new Partition(workerMetadata_1, block1),
+      new Partition(workerMetadata_2, block2)
+    )
+
+  }
+
 }
