@@ -31,13 +31,6 @@ object Block {
   ): Block =
     Block.fromSource(Source.fromURI(path.toURI), keyLength, valueLength)
 
-  def sort(block: Block): Block = {
-    val sortedRecords = block.records.sortBy(_.key)
-    new Block(sortedRecords)
-  }
-  def sample(block: Block): List[Key] = {
-    block.records.map(_.key).toList
-  }
 }
 
 class Block(val records: LazyList[Record]) extends AnyVal {
@@ -73,5 +66,14 @@ class Block(val records: LazyList[Record]) extends AnyVal {
 
     groupedRecords
   }
+
+
+  def sort(block: Block): Block = {
+    val sortedRecords = block.records.sortBy(_.key)
+    new Block(sortedRecords)
+  }
+
+  def sample(block: Block): LazyList[Key] =
+    Record.sampleWithInterval(block.records)
 
 }
