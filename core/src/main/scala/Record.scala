@@ -30,5 +30,7 @@ class Record(val key: Key, val value: Array[Byte]) extends Ordered[Record] {
   def is(that: Record): Boolean =
     (key is that.key) && (value sameElements that.value)
 
+  def toChars: Array[Char] = key.underlying.map(_.toChar) ++ value.map(_.toChar)
+
   override def compare(that: Record): Int = key.compare(that.key)
 }
