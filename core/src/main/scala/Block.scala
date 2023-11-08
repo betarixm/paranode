@@ -30,6 +30,11 @@ object Block {
       valueLength: Int = 90
   ): Block =
     Block.fromSource(Source.fromURI(path.toURI), keyLength, valueLength)
+
+  def sort(block: Block): Block = {
+    val sortedRecords = block.records.sortBy(_.key)
+    new Block(sortedRecords)
+  }
 }
 
 class Block(val records: LazyList[Record]) extends AnyVal {

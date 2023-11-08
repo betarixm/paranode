@@ -139,4 +139,28 @@ class BlockSpec extends AnyFlatSpec {
 
   }
 
+  it should "be sortable" in {
+    val block = new Block(
+      LazyList(
+        new Record(new Key(Array(0x4)), Array(0x5, 0x6, 0x7)),
+        new Record(new Key(Array(0x0)), Array(0x1, 0x2, 0x3)),
+        new Record(new Key(Array(0xc)), Array(0xd, 0xe, 0xf)),
+        new Record(new Key(Array(0x8)), Array(0x9, 0xa, 0xb))
+      )
+    )
+
+    val sortedBlock = Block.sort(block)
+
+    val expectedBlock =
+      new Block(
+        LazyList(
+          new Record(new Key(Array(0x0)), Array(0x1, 0x2, 0x3)),
+          new Record(new Key(Array(0x4)), Array(0x5, 0x6, 0x7)),
+          new Record(new Key(Array(0x8)), Array(0x9, 0xa, 0xb)),
+          new Record(new Key(Array(0xc)), Array(0xd, 0xe, 0xf))
+        )
+      )
+
+    assert(sortedBlock is expectedBlock)
+  }
 }
