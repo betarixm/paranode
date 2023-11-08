@@ -20,4 +20,19 @@ class KeySpec extends AnyFlatSpec {
 
     assert(keyFromString is key)
   }
+
+  they should "be compare right" in {
+    val key1 = new Key(Array(0x1,0x2,0x3,0x4))
+    val key2 = new Key(Array(0x1,0x2,0x3,0x4))
+    val key3 = new Key(Array(0x5,0x2,0x3,0x4))
+
+    assert(key1.compare(key2) == 0)
+    assert(key1.compare(key3) == -1)
+    assert(key3.compare(key1) == 1)
+    assert(key1 < key3)
+    assert(key3 > key1)
+    assert(key1 is key2)
+
+  }
+
 }
