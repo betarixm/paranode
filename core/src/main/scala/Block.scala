@@ -35,6 +35,9 @@ object Block {
     val sortedRecords = block.records.sortBy(_.key)
     new Block(sortedRecords)
   }
+  def sample(block: Block): List[Key] = {
+    block.records.map(_.key).toList
+  }
 }
 
 class Block(val records: LazyList[Record]) extends AnyVal {
