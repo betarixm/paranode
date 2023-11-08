@@ -14,8 +14,8 @@ class BlockSpec extends AnyFlatSpec {
     }
   }
 
-  implicit class ComparableRecord(sampledKeyList: List[Key]) {
-    def is(that: List[Key]): Boolean = {
+  implicit class ComparableRecord(sampledKeyList: LazyList[Key]) {
+    def is(that: LazyList[Key]): Boolean = {
       sampledKeyList
         .zip(that)
         .forall(keys => keys._1 is keys._2)
@@ -157,7 +157,7 @@ class BlockSpec extends AnyFlatSpec {
       )
     )
 
-    val sortedBlock = Block.sort(block)
+    val sortedBlock = block.sort(block)
 
     val expectedBlock =
       new Block(
@@ -172,7 +172,7 @@ class BlockSpec extends AnyFlatSpec {
     assert(sortedBlock is expectedBlock)
   }
 
-  it should "be able to sample" in {
+  it should "be able to be sampled" in {
     val block =
       new Block(
         LazyList(
@@ -182,14 +182,16 @@ class BlockSpec extends AnyFlatSpec {
           new Record(new Key(Array(0xc)), Array(0xd, 0xe, 0xf))
         )
       )
-    val sample = Block.sample(block)
+
+    val sample = block.sample(block)
 
     val key1 = new Key(Array(0x0))
     val key2 = new Key(Array(0x4))
     val key3 = new Key(Array(0x8))
     val key4 = new Key(Array(0xc))
 
-    val expectedSample = List(key1, key2, key3, key4)
+    val expectedSample = LazyList(key1, key2, key3, key4)
+
     assert(sample is expectedSample)
   }
 }

@@ -24,6 +24,19 @@ object Record {
         valueLength
       )
   }
+
+  def sampleWithInterval(
+      records: LazyList[Record],
+      interval: Int = 10
+  ): LazyList[Key] = {
+    if (records.isEmpty)
+      LazyList.empty[Key]
+    else {
+      val (current, rest) = records.splitAt(interval)
+      val head = current.head.key
+      head #:: sampleWithInterval(rest, interval)
+    }
+  }
 }
 
 class Record(val key: Key, val value: Array[Byte]) extends Ordered[Record] {
