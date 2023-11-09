@@ -67,7 +67,6 @@ class Block(val records: LazyList[Record]) extends AnyVal {
     groupedRecords
   }
 
-
   def sort(block: Block): Block = {
     val sortedRecords = block.records.sortBy(_.key)
     new Block(sortedRecords)
