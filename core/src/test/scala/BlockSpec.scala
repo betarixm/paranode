@@ -6,6 +6,17 @@ import java.io.File
 import scala.io.Source
 
 class BlockSpec extends AnyFlatSpec {
+  implicit class ComparableKeyRange(keyRange: KeyRange) {
+    def is(that: KeyRange): Boolean =
+      (keyRange._1 is that._1) && (keyRange._2 is that._2)
+  }
+
+  implicit class ComparablePartition(partition: Partition) {
+    def is(that: Partition): Boolean = {
+      (partition._1 is that._1) && (partition._2 is that._2)
+    }
+  }
+
   implicit class ComparableBlock(block: Block) {
     def is(that: Block): Boolean = {
       block.records
@@ -107,29 +118,9 @@ class BlockSpec extends AnyFlatSpec {
   }
 
   it should "be able to make partition" in {
-    val keyStart1 = new Key(Array(0x0))
-    val keyEnd1 = new Key(Array(0x4))
-    val keyRange1 = new KeyRange(keyStart1, keyEnd1)
-    val workerMetadata1 = WorkerMetadata("1.1.1.1", 123, Option(keyRange1))
+    val firstKeyRange = new KeyRange(new Key(Array(0x0)), new Key(Array(0x4)))
+    val secondKeyRange = new KeyRange(new Key(Array(0x5)), new Key(Array(0x9)))
 
-    val keyStart2 = new Key(Array(0x5))
-    val keyEnd2 = new Key(Array(0x9))
-    val keyRange2 = new KeyRange(keyStart2, keyEnd2)
-    val workerMetadata2 = WorkerMetadata("2.2.2.2", 123, Option(keyRange2))
-
-    val workers = List(workerMetadata1, workerMetadata2)
-
-    val block1 = new Block(
-      LazyList(
-        new Record(new Key(Array(0x1)), Array(0x1, 0x2, 0x3)),
-        new Record(new Key(Array(0x2)), Array(0x8, 0x9, 0x7))
-      )
-    )
-    val block2 = new Block(
-      LazyList(
-        new Record(new Key(Array(0x6)), Array(0x5, 0x6, 0x7))
-      )
-    )
     val blocks = new Block(
       LazyList(
         new Record(new Key(Array(0x1)), Array(0x1, 0x2, 0x3)),
@@ -137,14 +128,34 @@ class BlockSpec extends AnyFlatSpec {
         new Record(new Key(Array(0x2)), Array(0x8, 0x9, 0x7))
       )
     )
-    val result = blocks.partition(workers)
 
-    val answer = List(
-      new Partition(workerMetadata1, block1),
-      new Partition(workerMetadata2, block2)
+    val partitions = blocks.partition(List(firstKeyRange, secondKeyRange))
+
+    val expectedPartitions = List(
+      new Partition(
+        firstKeyRange,
+        new Block(
+          LazyList(
+            new Record(new Key(Array(0x1)), Array(0x1, 0x2, 0x3)),
+            new Record(new Key(Array(0x2)), Array(0x8, 0x9, 0x7))
+          )
+        )
+      ),
+      new Partition(
+        secondKeyRange,
+        new Block(
+          LazyList(
+            new Record(new Key(Array(0x6)), Array(0x5, 0x6, 0x7))
+          )
+        )
+      )
     )
-    assert(result.zip(answer).forall({ case ((_, a), (_, b)) => a is b }))
 
+    assert(
+      partitions
+        .zip(expectedPartitions)
+        .forall(partitions => partitions._1 is partitions._2)
+    )
   }
 
   it should "be sortable" in {
