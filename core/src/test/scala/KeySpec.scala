@@ -21,4 +21,16 @@ class KeySpec extends AnyFlatSpec {
     assert(keyFromString is key)
   }
 
+  they should "be comparable" in {
+    val key1 = new Key(Array(0x01, 0x03, 0x03, 0x07).map(_.toByte))
+    val key2 = new Key(Array(0x01, 0x03, 0x03, 0x08).map(_.toByte))
+    val key3 = new Key(Array(0x01, 0x03, 0x03, 0x09).map(_.toByte))
+    val key4 = new Key(Array(0x01, 0x03, 0x03, 0x07).map(_.toByte))
+    val key5 = new Key(Array(0x01, 0x03, 0x01, 0x02).map(_.toByte))
+
+    assert(key1.compare(key2) == -1)
+    assert(key1.compare(key3) == -2)
+    assert(key1.compare(key4) == 0)
+    assert(key1.compare(key5) == 2)
+  }
 }

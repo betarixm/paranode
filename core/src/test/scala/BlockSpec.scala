@@ -14,6 +14,14 @@ class BlockSpec extends AnyFlatSpec {
     }
   }
 
+  implicit class ComparableRecord(sampledKeyList: LazyList[Key]) {
+    def is(that: LazyList[Key]): Boolean = {
+      sampledKeyList
+        .zip(that)
+        .forall(keys => keys._1 is keys._2)
+    }
+  }
+
   "Block" should "be constructable from bytes" in {
     val bytes = LazyList[Byte](0, 1, 2, 3, 4, 5, 6, 7)
     val block = Block.fromBytes(bytes, keyLength = 1, valueLength = 3)
@@ -139,4 +147,51 @@ class BlockSpec extends AnyFlatSpec {
 
   }
 
+  it should "be sortable" in {
+    val block = new Block(
+      LazyList(
+        new Record(new Key(Array(0x4)), Array(0x5, 0x6, 0x7)),
+        new Record(new Key(Array(0x0)), Array(0x1, 0x2, 0x3)),
+        new Record(new Key(Array(0xc)), Array(0xd, 0xe, 0xf)),
+        new Record(new Key(Array(0x8)), Array(0x9, 0xa, 0xb))
+      )
+    )
+
+    val sortedBlock = block.sort(block)
+
+    val expectedBlock =
+      new Block(
+        LazyList(
+          new Record(new Key(Array(0x0)), Array(0x1, 0x2, 0x3)),
+          new Record(new Key(Array(0x4)), Array(0x5, 0x6, 0x7)),
+          new Record(new Key(Array(0x8)), Array(0x9, 0xa, 0xb)),
+          new Record(new Key(Array(0xc)), Array(0xd, 0xe, 0xf))
+        )
+      )
+
+    assert(sortedBlock is expectedBlock)
+  }
+
+  it should "be able to be sampled" in {
+    val block =
+      new Block(
+        LazyList(
+          new Record(new Key(Array(0x0)), Array(0x1, 0x2, 0x3)),
+          new Record(new Key(Array(0x4)), Array(0x5, 0x6, 0x7)),
+          new Record(new Key(Array(0x8)), Array(0x9, 0xa, 0xb)),
+          new Record(new Key(Array(0xc)), Array(0xd, 0xe, 0xf))
+        )
+      )
+
+    val sample = block.sample(block)
+
+    val key1 = new Key(Array(0x0))
+    val key2 = new Key(Array(0x4))
+    val key3 = new Key(Array(0x8))
+    val key4 = new Key(Array(0xc))
+
+    val expectedSample = LazyList(key1, key2, key3, key4)
+
+    assert(sample is expectedSample)
+  }
 }
