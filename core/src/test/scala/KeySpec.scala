@@ -20,4 +20,5 @@ class KeySpec extends AnyFlatSpec {
 
     assert(keyFromString is key)
   }
+
 }
