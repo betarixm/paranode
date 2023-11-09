@@ -101,15 +101,15 @@ class BlockSpec extends AnyFlatSpec {
   it should "be able to make partition" in {
     val keyStart1 = new Key(Array(0x0))
     val keyEnd1 = new Key(Array(0x4))
-    val keyRange1 = new KeyRange(keyStart_1, keyEnd_1)
-    val workerMetadata1 = WorkerMetadata("1.1.1.1", 123, Option(keyRange_1))
+    val keyRange1 = new KeyRange(keyStart1, keyEnd1)
+    val workerMetadata1 = WorkerMetadata("1.1.1.1", 123, Option(keyRange1))
 
     val keyStart2 = new Key(Array(0x5))
     val keyEnd2 = new Key(Array(0x9))
-    val keyRange2 = new KeyRange(keyStart_2, keyEnd_2)
-    val workerMetadata2 = WorkerMetadata("2.2.2.2", 123, Option(keyRange_2))
+    val keyRange2 = new KeyRange(keyStart2, keyEnd2)
+    val workerMetadata2 = WorkerMetadata("2.2.2.2", 123, Option(keyRange2))
 
-    val workers = List(workerMetadata_1, workerMetadata_2)
+    val workers = List(workerMetadata1, workerMetadata2)
 
     val block1 = new Block(
       LazyList(
@@ -132,8 +132,8 @@ class BlockSpec extends AnyFlatSpec {
     val result = blocks.partition(workers)
 
     val answer = List(
-      new Partition(workerMetadata_1, block1),
-      new Partition(workerMetadata_2, block2)
+      new Partition(workerMetadata1, block1),
+      new Partition(workerMetadata2, block2)
     )
     assert(result.zip(answer).forall({ case ((_, a), (_, b)) => a is b }))
 
