@@ -47,17 +47,15 @@ class Block(val records: LazyList[Record]) extends AnyVal {
     } finally writer.close()
   }
 
-  def partition(keyRanges: List[KeyRange]): List[Partition] = {
-    def isInKeyRange(key: Key, range: KeyRange): Boolean =
-      (key >= range._1) && (key <= range._2)
+  def filterByKeyRange(keyRange: KeyRange): Block = new Block(
+    records.filter(keyRange.includes)
+  )
 
-    keyRanges.map(keyRange =>
-      (
-        keyRange,
-        new Block(records.filter(record => isInKeyRange(record.key, keyRange)))
-      )
-    )
-  }
+  def partition(keyRange: KeyRange): Partition =
+    (keyRange, filterByKeyRange(keyRange))
+
+  def partitions(keyRanges: List[KeyRange]): List[Partition] =
+    keyRanges.map(partition)
 
   def sort(block: Block): Block = {
     val sortedRecords = block.records.sortBy(_.key)

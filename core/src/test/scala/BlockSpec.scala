@@ -8,7 +8,7 @@ import scala.io.Source
 class BlockSpec extends AnyFlatSpec {
   implicit class ComparableKeyRange(keyRange: KeyRange) {
     def is(that: KeyRange): Boolean =
-      (keyRange._1 is that._1) && (keyRange._2 is that._2)
+      (keyRange.from is that.from) && (keyRange.from is that.from)
   }
 
   implicit class ComparablePartition(partition: Partition) {
@@ -118,8 +118,8 @@ class BlockSpec extends AnyFlatSpec {
   }
 
   it should "be able to make partition" in {
-    val firstKeyRange = new KeyRange(new Key(Array(0x0)), new Key(Array(0x4)))
-    val secondKeyRange = new KeyRange(new Key(Array(0x5)), new Key(Array(0x9)))
+    val firstKeyRange = KeyRange(new Key(Array(0x0)), new Key(Array(0x4)))
+    val secondKeyRange = KeyRange(new Key(Array(0x5)), new Key(Array(0x9)))
 
     val blocks = new Block(
       LazyList(
@@ -129,7 +129,7 @@ class BlockSpec extends AnyFlatSpec {
       )
     )
 
-    val partitions = blocks.partition(List(firstKeyRange, secondKeyRange))
+    val partitions = blocks.partitions(List(firstKeyRange, secondKeyRange))
 
     val expectedPartitions = List(
       new Partition(
