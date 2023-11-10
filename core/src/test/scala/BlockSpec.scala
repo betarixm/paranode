@@ -8,7 +8,7 @@ import scala.io.Source
 class BlockSpec extends AnyFlatSpec {
   implicit class ComparableKeyRange(keyRange: KeyRange) {
     def is(that: KeyRange): Boolean =
-      (keyRange.from is that.from) && (keyRange.from is that.from)
+      (keyRange.from is that.from) && (keyRange.to is that.to)
   }
 
   implicit class ComparablePartition(partition: Partition) {
