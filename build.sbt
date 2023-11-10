@@ -54,5 +54,12 @@ lazy val worker = (project in file("worker"))
 lazy val network = (project in file("rpc"))
   .settings(
     commonSettings,
-    idePackagePrefix := Some("kr.ac.postech.paranode.rpc")
+    idePackagePrefix := Some("kr.ac.postech.paranode.rpc"),
+    libraryDependencies ++= Seq(
+      "io.grpc" % "grpc-netty" % scalapb.compiler.Version.grpcJavaVersion,
+      "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
+    ),
+    Compile / PB.targets := Seq(
+      scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
+    )
   )
