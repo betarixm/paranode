@@ -54,7 +54,7 @@ class Block(val records: LazyList[Record]) extends AnyVal {
   def partition(keyRange: KeyRange): Partition =
     (keyRange, filterByKeyRange(keyRange))
 
-  def partitions(keyRanges: List[KeyRange]): List[Partition] =
+  def partition(keyRanges: List[KeyRange]): List[Partition] =
     keyRanges.map(partition)
 
   def sort(): Block =

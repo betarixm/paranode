@@ -129,7 +129,7 @@ class BlockSpec extends AnyFlatSpec {
       )
     )
 
-    val partitions = blocks.partitions(List(firstKeyRange, secondKeyRange))
+    val partitions = blocks.partition(List(firstKeyRange, secondKeyRange))
 
     val expectedPartitions = List(
       new Partition(
