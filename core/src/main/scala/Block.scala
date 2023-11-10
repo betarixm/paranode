@@ -57,12 +57,10 @@ class Block(val records: LazyList[Record]) extends AnyVal {
   def partitions(keyRanges: List[KeyRange]): List[Partition] =
     keyRanges.map(partition)
 
-  def sort(block: Block): Block = {
-    val sortedRecords = block.records.sortBy(_.key)
-    new Block(sortedRecords)
-  }
+  def sort(): Block =
+    new Block(records.sortBy(_.key))
 
-  def sample(block: Block): LazyList[Key] =
-    Record.sampleWithInterval(block.records)
+  def sample(): LazyList[Key] =
+    Record.sampleWithInterval(records)
 
 }

@@ -168,7 +168,7 @@ class BlockSpec extends AnyFlatSpec {
       )
     )
 
-    val sortedBlock = block.sort(block)
+    val sortedBlock = block.sort()
 
     val expectedBlock =
       new Block(
@@ -194,7 +194,7 @@ class BlockSpec extends AnyFlatSpec {
         )
       )
 
-    val sample = block.sample(block)
+    val sample = block.sample()
 
     val key1 = new Key(Array(0x0))
     val key2 = new Key(Array(0x4))
