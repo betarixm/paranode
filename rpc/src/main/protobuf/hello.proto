@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package kr.ac.postech.paranode.protos;
+package kr.ac.postech.paranode.rpc;
 
 // The greeting service definition.
 service Greeter {
