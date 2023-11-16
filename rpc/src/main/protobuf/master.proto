@@ -4,7 +4,7 @@ package kr.ac.postech.paranode.rpc;
 
 service Master {
     
-    rpc RegisterWorkerDirectory (RegisterRequest) returns (RegisterRelpy) {}
+    rpc RegisterWorkerDirectory (RegisterRequest) returns (RegisterReply) {}
 }
 
 message RegisterRequest {
@@ -13,6 +13,6 @@ message RegisterRequest {
     string outputDirectory = 3;
 }
 
-message RegisterRelpy {
+message RegisterReply {
     bool isRegistered = 1;
 }
