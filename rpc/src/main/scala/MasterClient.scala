@@ -7,7 +7,7 @@ import kr.ac.postech.paranode.rpc.master.{
   MasterGrpc,
   MasterProto,
   RegisterRequest,
-  RegisterRelpy
+  RegisterReply
 }
 
 import kr.ac.postech.paranode.rpc.master.MasterGrpc.MasterBlockingStub

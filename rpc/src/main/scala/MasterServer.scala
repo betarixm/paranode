@@ -7,7 +7,7 @@ import kr.ac.postech.paranode.rpc.master.{
   MasterGrpc,
   MasterProto,
   RegisterRequest,
-  RegisterRelpy
+  RegisterReply
 }
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,7 +68,7 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       )
       System.err.println(s"*** Output Directory: ${request.outputDirectory}")
 
-      val reply = RegisterRelpy(isRegistered = true)
+      val reply = RegisterReply(isRegistered = true)
       Future.successful(reply)
     }
   }
