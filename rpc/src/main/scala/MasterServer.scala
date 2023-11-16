@@ -5,6 +5,7 @@ import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.rpc.master.MasterGrpc
 import kr.ac.postech.paranode.rpc.master.RegisterReply
 import kr.ac.postech.paranode.rpc.master.RegisterRequest
+
 import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

@@ -6,6 +6,7 @@ import io.grpc.StatusRuntimeException
 import kr.ac.postech.paranode.rpc.master.MasterGrpc
 import kr.ac.postech.paranode.rpc.master.MasterGrpc.MasterBlockingStub
 import kr.ac.postech.paranode.rpc.master.RegisterRequest
+
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
