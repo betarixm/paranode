@@ -1,14 +1,14 @@
 package kr.ac.postech.paranode.rpc
 
+import io.grpc.ManagedChannel
+import io.grpc.ManagedChannelBuilder
+import io.grpc.StatusRuntimeException
+import kr.ac.postech.paranode.rpc.master.MasterGrpc
+import kr.ac.postech.paranode.rpc.master.MasterGrpc.MasterBlockingStub
+import kr.ac.postech.paranode.rpc.master.RegisterRequest
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
-
-import kr.ac.postech.paranode.rpc.master.MasterGrpc
-import kr.ac.postech.paranode.rpc.master.RegisterRequest
-import kr.ac.postech.paranode.rpc.master.MasterGrpc.MasterBlockingStub
-
-import io.grpc.{StatusRuntimeException, ManagedChannelBuilder, ManagedChannel}
 
 object MasterClient {
   def apply(host: String, port: Int): MasterClient = {

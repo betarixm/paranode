@@ -1,15 +1,13 @@
 package kr.ac.postech.paranode.rpc
 
-import java.util.logging.Logger
-
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.rpc.master.MasterGrpc
-import kr.ac.postech.paranode.rpc.master.RegisterRequest
 import kr.ac.postech.paranode.rpc.master.RegisterReply
-
-
-import scala.concurrent.{ExecutionContext, Future}
+import kr.ac.postech.paranode.rpc.master.RegisterRequest
+import java.util.logging.Logger
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 object MasterServer {
   private val logger = Logger.getLogger(classOf[MasterServer].getName)
@@ -57,7 +55,9 @@ class MasterServer(executionContext: ExecutionContext) { self =>
   }
 
   private class MasterImpl extends MasterGrpc.Master {
-    override def registerWorkerDirectory(request: RegisterRequest): Future[RegisterReply] = {
+    override def registerWorkerDirectory(
+        request: RegisterRequest
+    ): Future[RegisterReply] = {
       System.err.println("*** server side code working")
       System.err.println(
         s"*** Received registration request: ipAddress = ${request.ipAddress}"
