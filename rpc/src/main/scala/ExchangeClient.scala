@@ -2,11 +2,9 @@ package kr.ac.postech.paranode.rpc
 
 import java.util.logging.Logger
 import java.util.concurrent.TimeUnit
-import kr.ac.postech.paranode.rpc.exchange.{
-  ExchangeGrpc,
-  GetMyRecordsRequest,
-  GetMyRecordsReply
-}
+import kr.ac.postech.paranode.rpc.exchange.ExchangeGrpc
+import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsRequest
+import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsReply
 
 import kr.ac.postech.paranode.rpc.exchange.ExchangeGrpc.ExchangeBlockingStub
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}

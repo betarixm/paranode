@@ -3,12 +3,9 @@ package kr.ac.postech.paranode.rpc
 import java.util.logging.Logger
 
 import io.grpc.{Server, ServerBuilder}
-import kr.ac.postech.paranode.rpc.exchange.{
-  ExchangeGrpc,
-  GetMyRecordsRequest,
-  GetMyRecordsReply
-}
-
+import kr.ac.postech.paranode.rpc.exchange.ExchangeGrpc
+import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsRequest
+import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsReply
 import scala.concurrent.{ExecutionContext, Future}
 
 object ExchangeServer {
@@ -59,7 +56,9 @@ class ExchangeServer(executionContext: ExecutionContext) { self =>
   }
 
   private class ExchangeImpl extends ExchangeGrpc.Exchange {
-    override def saveRecords(request: GetMyRecordsRequest) = {
+    override def saveRecords(
+        request: GetMyRecordsRequest
+    ): Future[GetMyRecordsReply] = {
       // TODO
       val reply = GetMyRecordsReply(isNice = true)
       Future.successful(reply)
