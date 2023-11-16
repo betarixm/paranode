@@ -1,20 +1,20 @@
 package kr.ac.postech.paranode.rpc
 
-import java.util.logging.Logger
-import java.util.concurrent.TimeUnit
+import io.grpc.ManagedChannel
+import io.grpc.ManagedChannelBuilder
 import kr.ac.postech.paranode.rpc.worker.ExchangeReply
 import kr.ac.postech.paranode.rpc.worker.ExchangeRequest
 import kr.ac.postech.paranode.rpc.worker.MergeReply
 import kr.ac.postech.paranode.rpc.worker.MergeRequest
 import kr.ac.postech.paranode.rpc.worker.PartitionReply
 import kr.ac.postech.paranode.rpc.worker.PartitionRequest
+import kr.ac.postech.paranode.rpc.worker.PartitionRequest.WorkerPartition
 import kr.ac.postech.paranode.rpc.worker.SampleReply
 import kr.ac.postech.paranode.rpc.worker.SampleRequest
 import kr.ac.postech.paranode.rpc.worker.WorkerGrpc
-
 import kr.ac.postech.paranode.rpc.worker.WorkerGrpc.WorkerBlockingStub
-import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
-import kr.ac.postech.paranode.rpc.worker.PartitionRequest.WorkerPartition
+import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 object WorkerClient {
   def apply(host: String, port: Int): WorkerClient = {

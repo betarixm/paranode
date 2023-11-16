@@ -1,13 +1,14 @@
 package kr.ac.postech.paranode.rpc
 
-import java.util.logging.Logger
-import java.util.concurrent.TimeUnit
+import io.grpc.ManagedChannel
+import io.grpc.ManagedChannelBuilder
 import kr.ac.postech.paranode.rpc.exchange.ExchangeGrpc
-import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsRequest
-import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsReply
-
 import kr.ac.postech.paranode.rpc.exchange.ExchangeGrpc.ExchangeBlockingStub
-import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
+import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsReply
+import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsRequest
+
+import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 object ExchangeClient {
   def apply(host: String, port: Int): ExchangeClient = {

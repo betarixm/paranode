@@ -1,12 +1,13 @@
 package kr.ac.postech.paranode.rpc
 
-import java.util.logging.Logger
-
-import io.grpc.{Server, ServerBuilder}
+import io.grpc.Server
+import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.rpc.exchange.ExchangeGrpc
-import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsRequest
 import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsReply
-import scala.concurrent.{ExecutionContext, Future}
+import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsRequest
+import java.util.logging.Logger
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 object ExchangeServer {
   private val logger = Logger.getLogger(classOf[ExchangeServer].getName)

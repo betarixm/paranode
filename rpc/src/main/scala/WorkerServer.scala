@@ -1,8 +1,7 @@
 package kr.ac.postech.paranode.rpc
 
-import java.util.logging.Logger
-
-import io.grpc.{Server, ServerBuilder}
+import io.grpc.Server
+import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.rpc.worker.ExchangeReply
 import kr.ac.postech.paranode.rpc.worker.ExchangeRequest
 import kr.ac.postech.paranode.rpc.worker.MergeReply
@@ -13,7 +12,9 @@ import kr.ac.postech.paranode.rpc.worker.SampleReply
 import kr.ac.postech.paranode.rpc.worker.SampleRequest
 import kr.ac.postech.paranode.rpc.worker.WorkerGrpc
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.util.logging.Logger
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 object WorkerServer {
   private val logger = Logger.getLogger(classOf[WorkerServer].getName)
