@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package kr.ac.postech.paranode.rpc;
+
+service Master {
+    
+    rpc RegisterWorkerDirectory (RegisterRequest) returns (RegisterReply) {}
+}
+
+message RegisterRequest {
+    string ipAddress = 1;
+    repeated string inputDirectory = 2;
+    string outputDirectory = 3;
+}
+
+message RegisterReply {
+    bool isRegistered = 1;
+}
