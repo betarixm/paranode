@@ -1,15 +1,11 @@
 package kr.ac.postech.paranode.rpc
 
 import java.util.concurrent.TimeUnit
-import java.util.logging.{Level, Logger}
+import java.util.logging.Level
+import java.util.logging.Logger
 
-import kr.ac.postech.paranode.rpc.master.{
-  MasterGrpc,
-  MasterProto,
-  RegisterRequest,
-  RegisterReply
-}
-
+import kr.ac.postech.paranode.rpc.master.MasterGrpc
+import kr.ac.postech.paranode.rpc.master.RegisterRequest
 import kr.ac.postech.paranode.rpc.master.MasterGrpc.MasterBlockingStub
 
 import io.grpc.{StatusRuntimeException, ManagedChannelBuilder, ManagedChannel}
