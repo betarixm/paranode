@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package kr.ac.postech.paranode.rpc;
+
+message Node {
+  string host = 1;
+  int32 port = 2;
+}
+
+message KeyRange {
+  bytes from = 1;
+  bytes to = 2;
+}
+
+message WorkerMetadata {
+  Node node = 1;
+  KeyRange keyRange = 2;
+}

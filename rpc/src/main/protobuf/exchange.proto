@@ -3,14 +3,11 @@ syntax = "proto3";
 package kr.ac.postech.paranode.rpc;
 
 service Exchange {
-    
-    rpc SaveRecords (GetMyRecordsRequest) returns (GetMyRecordsReply) {}
+    rpc SaveRecords (SaveRecordsRequest) returns (SaveRecordsReply) {}
 }
 
-message GetMyRecordsRequest {
-    repeated string records = 1;
+message SaveRecordsRequest {
+    repeated bytes records = 1;
 }
 
-message GetMyRecordsReply {
-    bool isNice = 1;
-}
+message SaveRecordsReply {}

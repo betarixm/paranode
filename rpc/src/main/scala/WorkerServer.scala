@@ -2,19 +2,13 @@ package kr.ac.postech.paranode.rpc
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import kr.ac.postech.paranode.rpc.worker.ExchangeReply
-import kr.ac.postech.paranode.rpc.worker.ExchangeRequest
-import kr.ac.postech.paranode.rpc.worker.MergeReply
-import kr.ac.postech.paranode.rpc.worker.MergeRequest
-import kr.ac.postech.paranode.rpc.worker.PartitionReply
-import kr.ac.postech.paranode.rpc.worker.PartitionRequest
-import kr.ac.postech.paranode.rpc.worker.SampleReply
-import kr.ac.postech.paranode.rpc.worker.SampleRequest
-import kr.ac.postech.paranode.rpc.worker.WorkerGrpc
 
 import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
+
+import worker._
 
 object WorkerServer {
   private val logger = Logger.getLogger(classOf[WorkerServer].getName)
@@ -29,14 +23,13 @@ object WorkerServer {
 }
 
 class WorkerServer(executionContext: ExecutionContext) { self =>
-  private[this] var server: Server = null
+  private[this] val server: Server = ServerBuilder
+    .forPort(WorkerServer.port)
+    .addService(WorkerGrpc.bindService(new WorkerImpl, executionContext))
+    .build()
 
   private def start(): Unit = {
-    server = ServerBuilder
-      .forPort(WorkerServer.port)
-      .addService(WorkerGrpc.bindService(new WorkerImpl, executionContext))
-      .build
-      .start
+    server.start()
 
     WorkerServer.logger.info(
       "Server started, listening on " + WorkerServer.port
@@ -64,39 +57,51 @@ class WorkerServer(executionContext: ExecutionContext) { self =>
   }
 
   private class WorkerImpl extends WorkerGrpc.Worker {
-    override def sampleKeys(request: SampleRequest): Future[SampleReply] = {
+    override def sample(request: SampleRequest): Future[SampleReply] = {
+      val promise = Promise[SampleReply]
 
-      // TODO: Implement the logic to sample keys from the input directory.
-      // val sampledKeys = blockOfWorker.sample(block).map(_.toString).toList
-      val sampledKeys = List("0x1", "0x2", "0x3")
-      // TODO: Implement the logic to check whether the sampled keys are nice
+      Future {
+        // TODO: Logic
+        promise.success(new SampleReply())
+      }(executionContext)
 
-      val reply = SampleReply(sampledKeys, isNice = true)
-      Future.successful(reply)
+      promise.future
     }
 
-    override def makePartitions(
+    override def partition(
         request: PartitionRequest
     ): Future[PartitionReply] = {
-      // TODO
-      val reply = PartitionReply(isNice = true)
-      Future.successful(reply)
+      val promise = Promise[PartitionReply]
+
+      Future {
+        // TODO: Logic
+        promise.success(new PartitionReply())
+      }(executionContext)
+
+      promise.future
     }
 
-    override def exchangeWithOtherWorker(
-        request: ExchangeRequest
-    ): Future[ExchangeReply] = {
-      // TODO
-      val reply = ExchangeReply(isNice = true)
-      Future.successful(reply)
+    override def exchange(request: ExchangeRequest): Future[ExchangeReply] = {
+      val promise = Promise[ExchangeReply]
+
+      Future {
+        // TODO: Logic
+        promise.success(new ExchangeReply())
+      }(executionContext)
+
+      promise.future
     }
 
     override def merge(request: MergeRequest): Future[MergeReply] = {
-      // TODO
-      val reply = MergeReply(isNice = true)
-      Future.successful(reply)
-    }
+      val promise = Promise[MergeReply]
 
+      Future {
+        // TODO: Logic
+        promise.success(new MergeReply())
+      }(executionContext)
+
+      promise.future
+    }
   }
 
 }

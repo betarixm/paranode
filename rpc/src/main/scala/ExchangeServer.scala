@@ -2,13 +2,13 @@ package kr.ac.postech.paranode.rpc
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import kr.ac.postech.paranode.rpc.exchange.ExchangeGrpc
-import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsReply
-import kr.ac.postech.paranode.rpc.exchange.GetMyRecordsRequest
 
 import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
+
+import exchange.{ExchangeGrpc, SaveRecordsReply, SaveRecordsRequest}
 
 object ExchangeServer {
   private val logger = Logger.getLogger(classOf[ExchangeServer].getName)
@@ -23,14 +23,13 @@ object ExchangeServer {
 }
 
 class ExchangeServer(executionContext: ExecutionContext) { self =>
-  private[this] var server: Server = null
+  private[this] val server: Server = ServerBuilder
+    .forPort(ExchangeServer.port)
+    .addService(ExchangeGrpc.bindService(new ExchangeImpl, executionContext))
+    .build()
 
   private def start(): Unit = {
-    server = ServerBuilder
-      .forPort(ExchangeServer.port)
-      .addService(ExchangeGrpc.bindService(new ExchangeImpl, executionContext))
-      .build
-      .start
+    server.start()
 
     ExchangeServer.logger.info(
       "Server started, listening on " + ExchangeServer.port
@@ -59,11 +58,16 @@ class ExchangeServer(executionContext: ExecutionContext) { self =>
 
   private class ExchangeImpl extends ExchangeGrpc.Exchange {
     override def saveRecords(
-        request: GetMyRecordsRequest
-    ): Future[GetMyRecordsReply] = {
-      // TODO
-      val reply = GetMyRecordsReply(isNice = true)
-      Future.successful(reply)
+        request: SaveRecordsRequest
+    ): Future[SaveRecordsReply] = {
+      val promise = Promise[SaveRecordsReply]
+
+      Future {
+        // TODO: Logic
+        promise.success(new SaveRecordsReply())
+      }(executionContext)
+
+      promise.future
     }
   }
 
