@@ -3,6 +3,10 @@ package kr.ac.postech.paranode.rpc
 import io.grpc.Server
 import io.grpc.ServerBuilder
 
+import java.io.File
+import java.io.PrintWriter
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -61,8 +65,30 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       val promise = Promise[RegisterReply]
 
       Future {
-        // TODO: Logic
-        promise.success(new RegisterReply())
+        try {
+          val dirPath = Paths.get("worker_register")
+          if (!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath)
+          }
+          val filePath =
+            dirPath.resolve(request.worker.get.host + ".txt").toString
+
+          val writer = new PrintWriter(new File(filePath), "UTF-8")
+          try {
+            writer.println(
+              s"Worker Host: ${request.worker.get.host}, Worker Port: ${request.worker.get.port}"
+            )
+          } finally {
+            writer.close()
+          }
+          promise.success(new RegisterReply())
+        } catch {
+          case e: Exception =>
+            MasterServer.logger.warning(
+              "Failed to write to file: " + e.getMessage
+            )
+            promise.failure(e)
+        }
       }(executionContext)
 
       promise.future
