@@ -2,6 +2,7 @@ package kr.ac.postech.paranode.rpc
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
+import kr.ac.postech.paranode.rpc.MasterServer.port
 
 import java.io.File
 import java.io.PrintWriter
@@ -11,9 +12,8 @@ import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
-import kr.ac.postech.paranode.rpc.MasterServer.port
+import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
 object MasterServer {
   private val logger = Logger.getLogger(classOf[MasterServer].getName)
@@ -32,7 +32,7 @@ class MasterServer(executionContext: ExecutionContext) { self =>
     .forPort(MasterServer.port)
     .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
     .build()
-  
+
   private var requestCount = 0
 
   def incrementRequestCount(): Unit = synchronized {
@@ -40,7 +40,7 @@ class MasterServer(executionContext: ExecutionContext) { self =>
   }
 
   def getRequestCount: Int = requestCount
-  def getPort:String = port.toString
+  def getPort: String = port.toString
 
   private def start(): Unit = {
     server.start()
