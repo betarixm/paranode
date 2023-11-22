@@ -3,7 +3,7 @@ package kr.ac.postech.paranode.worker
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.MasterClient
 
-import java.net.URL
+import java.net.{InetAddress, URL}
 import scala.io.Source
 import scala.util.Try
 
@@ -34,13 +34,12 @@ object Main {
     // Open MasterClient and request register
     val client = MasterClient(ip, port)
     try {
-      val url = new URL("http://checkip.amazonaws.com")
-      val source = Source.fromURL(url)
-      val publicIpAddress = source.mkString.trim
-      source.close()
+      val publicIpAddress = InetAddress.getLocalHost.getHostAddress
 
       val workerMetadata = WorkerMetadata(publicIpAddress, -1, None)
       client.register(workerMetadata)
+
+      // doesn't come here. I think its because we use blockingStub.
 
     } finally {
       client.shutdown()

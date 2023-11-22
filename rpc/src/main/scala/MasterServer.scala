@@ -12,8 +12,10 @@ import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-
 import master.{MasterGrpc, RegisterReply, RegisterRequest}
+
+import scala.collection.mutable.{ListBuffer, WrappedArray}
+import kr.ac.postech.paranode.core.WorkerMetadata
 
 object MasterServer {
   private val logger = Logger.getLogger(classOf[MasterServer].getName)
@@ -33,13 +35,14 @@ class MasterServer(executionContext: ExecutionContext) { self =>
     .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
     .build()
 
-  private var requestCount = 0
+  private val workerDetails:ListBuffer[WorkerMetadata] = ListBuffer()
 
-  def incrementRequestCount(): Unit = synchronized {
-    requestCount += 1
+  def addWorkerInfo(workerMetadata: WorkerMetadata): Unit = synchronized {
+    workerDetails += workerMetadata
   }
 
-  def getRequestCount: Int = requestCount
+  def getWorkerDetails: List[WorkerMetadata] = workerDetails.toList
+
   def getPort: String = port.toString
 
   private def start(): Unit = {
@@ -78,31 +81,8 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       val promise = Promise[RegisterReply]
 
       Future {
-        try {
-          val dirPath = Paths.get("worker_register")
-          if (!Files.exists(dirPath)) {
-            Files.createDirectories(dirPath)
-          }
-          val filePath =
-            dirPath.resolve(request.worker.get.host + ".txt").toString
-
-          val writer = new PrintWriter(new File(filePath), "UTF-8")
-          try {
-            writer.println(
-              s"Worker Host: ${request.worker.get.host}, Worker Port: ${request.worker.get.port}"
-            )
-          } finally {
-            self.incrementRequestCount()
-            writer.close()
-          }
-          promise.success(new RegisterReply())
-        } catch {
-          case e: Exception =>
-            MasterServer.logger.warning(
-              "Failed to write to file: " + e.getMessage
-            )
-            promise.failure(e)
-        }
+        val workerMetadata = WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
+        addWorkerInfo(workerMetadata)
       }(executionContext)
 
       promise.future
