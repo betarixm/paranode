@@ -11,8 +11,9 @@ import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-
 import master.{MasterGrpc, RegisterReply, RegisterRequest}
+
+import kr.ac.postech.paranode.rpc.MasterServer.port
 
 object MasterServer {
   private val logger = Logger.getLogger(classOf[MasterServer].getName)
@@ -31,6 +32,15 @@ class MasterServer(executionContext: ExecutionContext) { self =>
     .forPort(MasterServer.port)
     .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
     .build()
+  
+  private var requestCount = 0
+
+  def incrementRequestCount(): Unit = synchronized {
+    requestCount += 1
+  }
+
+  def getRequestCount: Int = requestCount
+  def getPort:String = port.toString
 
   private def start(): Unit = {
     server.start()
@@ -47,6 +57,9 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       System.err.println("*** server shut down")
     }
   }
+
+  def startServer(): Unit = this.start()
+  def stopServer(): Unit = this.stop()
 
   private def stop(): Unit = {
     if (server != null) {
@@ -79,6 +92,7 @@ class MasterServer(executionContext: ExecutionContext) { self =>
               s"Worker Host: ${request.worker.get.host}, Worker Port: ${request.worker.get.port}"
             )
           } finally {
+            self.incrementRequestCount()
             writer.close()
           }
           promise.success(new RegisterReply())
