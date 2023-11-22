@@ -3,12 +3,7 @@ package kr.ac.postech.paranode.master
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.MasterServer
 
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.net._
-
-import java.net.URL
-import scala.io.Source
 import scala.util.Try
 
 object Main {

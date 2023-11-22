@@ -2,20 +2,17 @@ package kr.ac.postech.paranode.rpc
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
+import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.MasterServer.port
 
-import java.io.File
-import java.io.PrintWriter
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.logging.Logger
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.WrappedArray
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
-import scala.collection.mutable.{ListBuffer, WrappedArray}
-import kr.ac.postech.paranode.core.WorkerMetadata
+import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
 object MasterServer {
   private val logger = Logger.getLogger(classOf[MasterServer].getName)
@@ -35,7 +32,7 @@ class MasterServer(executionContext: ExecutionContext) { self =>
     .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
     .build()
 
-  private val workerDetails:ListBuffer[WorkerMetadata] = ListBuffer()
+  private val workerDetails: ListBuffer[WorkerMetadata] = ListBuffer()
 
   def addWorkerInfo(workerMetadata: WorkerMetadata): Unit = synchronized {
     workerDetails += workerMetadata
@@ -81,7 +78,8 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       val promise = Promise[RegisterReply]
 
       Future {
-        val workerMetadata = WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
+        val workerMetadata =
+          WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
         addWorkerInfo(workerMetadata)
       }(executionContext)
 

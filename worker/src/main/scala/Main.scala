@@ -3,8 +3,7 @@ package kr.ac.postech.paranode.worker
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.MasterClient
 
-import java.net.{InetAddress, URL}
-import scala.io.Source
+import java.net.InetAddress
 import scala.util.Try
 
 object Main {
@@ -35,11 +34,8 @@ object Main {
     val client = MasterClient(ip, port)
     try {
       val publicIpAddress = InetAddress.getLocalHost.getHostAddress
-
       val workerMetadata = WorkerMetadata(publicIpAddress, -1, None)
       client.register(workerMetadata)
-
-      // doesn't come here. I think its because we use blockingStub.
 
     } finally {
       client.shutdown()
