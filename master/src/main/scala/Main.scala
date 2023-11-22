@@ -25,9 +25,9 @@ object Main {
     assert(workerInfo.size == numberOfWorker)
 
     try {
-      val publicIpAddress = InetAddress.getLocalHost.getHostAddress
+      val ipAddress = InetAddress.getLocalHost.getHostAddress
 
-      println(publicIpAddress + ":" + server.getPort)
+      println(ipAddress + ":" + server.getPort)
       println(workerInfo.map(_.host).mkString(", "))
     } catch {
       case e: Exception => e.printStackTrace()

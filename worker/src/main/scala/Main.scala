@@ -33,8 +33,8 @@ object Main {
     // Open MasterClient and request register
     val client = MasterClient(ip, port)
     try {
-      val publicIpAddress = InetAddress.getLocalHost.getHostAddress
-      val workerMetadata = WorkerMetadata(publicIpAddress, -1, None)
+      val ipAddress = InetAddress.getLocalHost.getHostAddress
+      val workerMetadata = WorkerMetadata(ipAddress, -1, None)
       client.register(workerMetadata)
 
     } finally {
