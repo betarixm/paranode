@@ -8,21 +8,32 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 import common.Node
-import master.MasterGrpc.MasterBlockingStub
+import master.MasterGrpc.MasterStub
 import master.{MasterGrpc, RegisterRequest}
 
 object MasterClient {
   def apply(host: String, port: Int): MasterClient = {
     val channel =
       ManagedChannelBuilder.forAddress(host, port).usePlaintext().build
-    val blockingStub = MasterGrpc.blockingStub(channel)
-    new MasterClient(channel, blockingStub)
+    val stub = MasterGrpc.stub(channel)
+    new MasterClient(channel, stub)
   }
+
+  def main(args: Array[String]): Unit = {
+    val client = MasterClient("localhost", 50051)
+    try {
+      val workerMetadata = WorkerMetadata("1.2.3.4", 56, None)
+      client.register(workerMetadata)
+    } finally {
+      client.shutdown()
+    }
+  }
+
 }
 
 class MasterClient private (
     private val channel: ManagedChannel,
-    private val blockingStub: MasterBlockingStub
+    private val stub: MasterStub
 ) {
   Logger.getLogger(classOf[MasterClient].getName)
 
@@ -38,6 +49,6 @@ class MasterClient private (
       Some(Node(workerMetadata.host, workerMetadata.port))
     )
 
-    blockingStub.register(request)
+    stub.register(request)
   }
 }

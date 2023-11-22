@@ -2,8 +2,12 @@ package kr.ac.postech.paranode.rpc
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
+import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.rpc.MasterServer.port
 
 import java.util.logging.Logger
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.WrappedArray
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -28,6 +32,16 @@ class MasterServer(executionContext: ExecutionContext) { self =>
     .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
     .build()
 
+  private val workerDetails: ListBuffer[WorkerMetadata] = ListBuffer()
+
+  def addWorkerInfo(workerMetadata: WorkerMetadata): Unit = synchronized {
+    workerDetails += workerMetadata
+  }
+
+  def getWorkerDetails: List[WorkerMetadata] = workerDetails.toList
+
+  def getPort: String = port.toString
+
   private def start(): Unit = {
     server.start()
 
@@ -43,6 +57,9 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       System.err.println("*** server shut down")
     }
   }
+
+  def startServer(): Unit = this.start()
+  def stopServer(): Unit = this.stop()
 
   private def stop(): Unit = {
     if (server != null) {
@@ -61,8 +78,9 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       val promise = Promise[RegisterReply]
 
       Future {
-        // TODO: Logic
-        promise.success(new RegisterReply())
+        val workerMetadata =
+          WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
+        addWorkerInfo(workerMetadata)
       }(executionContext)
 
       promise.future
