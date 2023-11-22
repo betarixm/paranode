@@ -38,20 +38,6 @@ lazy val core = (project in file("core"))
   )
   .dependsOn(utils)
 
-lazy val master = (project in file("master"))
-  .settings(
-    commonSettings,
-    idePackagePrefix := Some("kr.ac.postech.paranode.master")
-  )
-  .dependsOn(core)
-
-lazy val worker = (project in file("worker"))
-  .settings(
-    commonSettings,
-    idePackagePrefix := Some("kr.ac.postech.paranode.worker")
-  )
-  .dependsOn(core)
-
 lazy val rpc = (project in file("rpc"))
   .settings(
     commonSettings,
@@ -65,3 +51,19 @@ lazy val rpc = (project in file("rpc"))
     )
   )
   .dependsOn(core)
+
+lazy val master = (project in file("master"))
+  .settings(
+    commonSettings,
+    idePackagePrefix := Some("kr.ac.postech.paranode.master")
+  )
+  .dependsOn(core)
+  .dependsOn(rpc)
+
+lazy val worker = (project in file("worker"))
+  .settings(
+    commonSettings,
+    idePackagePrefix := Some("kr.ac.postech.paranode.worker")
+  )
+  .dependsOn(core)
+  .dependsOn(rpc)
