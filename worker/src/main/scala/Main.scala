@@ -38,14 +38,14 @@ object Main {
     registerReply.onComplete {
       case Success(_) =>
         client.shutdown()
-        //TODO: start WorkerServer
+      // TODO: start WorkerServer
       case Failure(exception) =>
         println(s"Registration failed: ${exception.getMessage}")
         client.shutdown()
         System.exit(1)
     }(scala.concurrent.ExecutionContext.global)
 
-    //TODO: wait for SampleRequest (with sorting)
+    // TODO: wait for SampleRequest (with sorting)
 
   }
 
