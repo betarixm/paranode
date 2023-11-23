@@ -6,6 +6,8 @@ import scala.util.{Failure, Success}
 import java.net.InetAddress
 import scala.util.Try
 
+import kr.ac.postech.paranode.rpc.master.RegisterRequest
+
 object Main {
   def main(args: Array[String]): Unit = {
     if (args.length < 5) {
