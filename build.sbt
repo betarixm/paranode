@@ -17,12 +17,13 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.scalactic" %% "scalactic" % "3.2.17",
     "org.scalatest" %% "scalatest" % "3.2.17" % "test",
-    "org.scalatest" %% "scalatest-flatspec" % "3.2.17" % "test"
+    "org.scalatest" %% "scalatest-flatspec" % "3.2.17" % "test",
+    "io.reactivex.rxjava3" % "rxjava" % "3.0.4"
   )
 )
 
 lazy val root = (project in file("."))
-  .aggregate(core, utils, master, worker, network)
+  .aggregate(core, utils, master, worker, rpc)
 
 lazy val utils = (project in file("utils"))
   .settings(
@@ -37,21 +38,7 @@ lazy val core = (project in file("core"))
   )
   .dependsOn(utils)
 
-lazy val master = (project in file("master"))
-  .settings(
-    commonSettings,
-    idePackagePrefix := Some("kr.ac.postech.paranode.master")
-  )
-  .dependsOn(core)
-
-lazy val worker = (project in file("worker"))
-  .settings(
-    commonSettings,
-    idePackagePrefix := Some("kr.ac.postech.paranode.worker")
-  )
-  .dependsOn(core)
-
-lazy val network = (project in file("rpc"))
+lazy val rpc = (project in file("rpc"))
   .settings(
     commonSettings,
     idePackagePrefix := Some("kr.ac.postech.paranode.rpc"),
@@ -63,3 +50,20 @@ lazy val network = (project in file("rpc"))
       scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
     )
   )
+  .dependsOn(core)
+
+lazy val master = (project in file("master"))
+  .settings(
+    commonSettings,
+    idePackagePrefix := Some("kr.ac.postech.paranode.master")
+  )
+  .dependsOn(core)
+  .dependsOn(rpc)
+
+lazy val worker = (project in file("worker"))
+  .settings(
+    commonSettings,
+    idePackagePrefix := Some("kr.ac.postech.paranode.worker")
+  )
+  .dependsOn(core)
+  .dependsOn(rpc)

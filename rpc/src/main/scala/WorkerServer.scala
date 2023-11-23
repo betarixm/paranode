@@ -1,20 +1,18 @@
 package kr.ac.postech.paranode.rpc
 
+import com.google.protobuf.ByteString
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import kr.ac.postech.paranode.rpc.worker.ExchangeReply
-import kr.ac.postech.paranode.rpc.worker.ExchangeRequest
-import kr.ac.postech.paranode.rpc.worker.MergeReply
-import kr.ac.postech.paranode.rpc.worker.MergeRequest
-import kr.ac.postech.paranode.rpc.worker.PartitionReply
-import kr.ac.postech.paranode.rpc.worker.PartitionRequest
-import kr.ac.postech.paranode.rpc.worker.SampleReply
-import kr.ac.postech.paranode.rpc.worker.SampleRequest
-import kr.ac.postech.paranode.rpc.worker.WorkerGrpc
+import kr.ac.postech.paranode.core._
 
 import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.reflect.io.Path
+
+import worker._
 
 object WorkerServer {
   private val logger = Logger.getLogger(classOf[WorkerServer].getName)
@@ -29,14 +27,13 @@ object WorkerServer {
 }
 
 class WorkerServer(executionContext: ExecutionContext) { self =>
-  private[this] var server: Server = null
+  private[this] val server: Server = ServerBuilder
+    .forPort(WorkerServer.port)
+    .addService(WorkerGrpc.bindService(new WorkerImpl, executionContext))
+    .build()
 
   private def start(): Unit = {
-    server = ServerBuilder
-      .forPort(WorkerServer.port)
-      .addService(WorkerGrpc.bindService(new WorkerImpl, executionContext))
-      .build
-      .start
+    server.start()
 
     WorkerServer.logger.info(
       "Server started, listening on " + WorkerServer.port
@@ -64,39 +61,109 @@ class WorkerServer(executionContext: ExecutionContext) { self =>
   }
 
   private class WorkerImpl extends WorkerGrpc.Worker {
-    override def sampleKeys(request: SampleRequest): Future[SampleReply] = {
+    override def sample(request: SampleRequest): Future[SampleReply] = {
+      val promise = Promise[SampleReply]
 
-      // TODO: Implement the logic to sample keys from the input directory.
-      // val sampledKeys = blockOfWorker.sample(block).map(_.toString).toList
-      val sampledKeys = List("0x1", "0x2", "0x3")
-      // TODO: Implement the logic to check whether the sampled keys are nice
+      Future {
+        try {
+          val sortedBlock = Block.fromPath(Path("data/block"), 10, 90).sort()
+          val sampledKeys = sortedBlock
+            .sample()
+            .map(key => ByteString.copyFrom(key.underlying))
+            .toList
+          val reply = SampleReply(sampledKeys)
 
-      val reply = SampleReply(sampledKeys, isNice = true)
-      Future.successful(reply)
+          promise.success(reply)
+        } catch {
+          case e: Exception =>
+            println(e)
+            promise.failure(e)
+        }
+      }(executionContext)
+
+      promise.future
     }
 
-    override def makePartitions(
+    override def partition(
         request: PartitionRequest
     ): Future[PartitionReply] = {
-      // TODO
-      val reply = PartitionReply(isNice = true)
-      Future.successful(reply)
+      val promise = Promise[PartitionReply]
+
+      Future {
+        try {
+          val block = Block.fromPath(Path("data/block"), 10, 90)
+          request.workers
+            .map(workerMetadata => {
+              val keyRange = KeyRange(
+                Key.fromString(workerMetadata.keyRange.get.from.toStringUtf8),
+                Key.fromString(workerMetadata.keyRange.get.to.toStringUtf8)
+              )
+              val partition = block.partition(keyRange)
+              val partitionPath = Path(
+                s"data/partition/${workerMetadata.node.get.host}:${workerMetadata.node.get.port}"
+              )
+              partition._2.writeTo(partitionPath)
+            })
+
+          promise.success(new PartitionReply())
+        } catch {
+          case e: Exception =>
+            println(e)
+            promise.failure(e)
+        }
+      }(executionContext)
+
+      promise.future
     }
 
-    override def exchangeWithOtherWorker(
-        request: ExchangeRequest
-    ): Future[ExchangeReply] = {
-      // TODO
-      val reply = ExchangeReply(isNice = true)
-      Future.successful(reply)
+    override def exchange(request: ExchangeRequest): Future[ExchangeReply] = {
+      val futures = request.workers.map(workerMetadata =>
+        Future {
+          val host = workerMetadata.node.get.host
+          val port = workerMetadata.node.get.port
+          val partitionPath = Path(s"data/partition/${host}:${port}")
+
+          try {
+            if (partitionPath.exists) {
+              val partition = Block.fromPath(partitionPath, 10, 90)
+              val exchangeClient = ExchangeClient.apply(host, port)
+              val reply = exchangeClient.saveRecords(partition.records)
+              Some(reply)
+            } else {
+              None
+            }
+          } finally {
+            if (partitionPath.exists) {
+              partitionPath.delete()
+            }
+          }
+        }(executionContext)
+      )
+
+      Future.sequence(futures).map(_ => new ExchangeReply())
     }
 
     override def merge(request: MergeRequest): Future[MergeReply] = {
-      // TODO
-      val reply = MergeReply(isNice = true)
-      Future.successful(reply)
-    }
+      val promise = Promise[MergeReply]
 
+      Future {
+        try {
+          val host = Path("data/host")
+          val port = Path("data/port")
+          val blockPath = Path(s"data/partition/${host}:${port}")
+          val mergedBlock = Block.fromPath(blockPath, 10, 90).sort()
+          mergedBlock.writeTo(blockPath)
+
+          promise.success(new MergeReply())
+        } catch {
+          case e: Exception =>
+            println(e)
+            promise.failure(e)
+        }
+      }(executionContext)
+
+      promise.future
+    }
   }
 
 }

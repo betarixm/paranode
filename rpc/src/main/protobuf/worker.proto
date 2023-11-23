@@ -2,11 +2,12 @@ syntax = "proto3";
 
 package kr.ac.postech.paranode.rpc;
 
-service Worker {
+import "common.proto";
 
-  rpc SampleKeys (SampleRequest) returns (SampleReply) {}
-  rpc MakePartitions (PartitionRequest) returns (PartitionReply) {}
-  rpc ExchangeWithOtherWorker (ExchangeRequest) returns (ExchangeReply) {}
+service Worker {
+  rpc Sample (SampleRequest) returns (SampleReply) {}
+  rpc Partition (PartitionRequest) returns (PartitionReply) {}
+  rpc Exchange (ExchangeRequest) returns (ExchangeReply) {}
   rpc Merge (MergeRequest) returns (MergeReply) {}
 }
 
@@ -15,33 +16,21 @@ message SampleRequest {
 }
 
 message SampleReply {
-  repeated string sampledKeys = 1;
-  bool isNice = 2;
+  repeated bytes sampledKeys = 1;
 }
 
 message PartitionRequest {
-
-  message WorkerPartition {
-    string workerIpAddress = 1;
-    string startKey = 2;
-    string endKey = 3;
-  }
-  repeated WorkerPartition partitions = 1;
-
+  repeated WorkerMetadata workers = 1;
 }
 
-message PartitionReply {
-  bool isNice = 1;
+message PartitionReply {}
+
+message ExchangeRequest {
+  repeated WorkerMetadata workers = 1;
 }
 
-message ExchangeRequest { }
+message ExchangeReply {}
 
-message ExchangeReply {
-  bool isNice = 1;
-}
+message MergeRequest {}
 
-message MergeRequest { }
-
-message MergeReply {
-  bool isNice = 1;
-}
+message MergeReply {}
