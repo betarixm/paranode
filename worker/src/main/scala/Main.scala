@@ -6,7 +6,7 @@ import scala.util.{Failure, Success}
 import java.net.InetAddress
 import scala.util.Try
 
-import kr.ac.postech.paranode.rpc.master.RegisterRequest
+import kr.ac.postech.paranode.rpc.master.RegisterReply
 
 object Main {
   def main(args: Array[String]): Unit = {
