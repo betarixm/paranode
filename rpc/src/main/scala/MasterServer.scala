@@ -81,6 +81,7 @@ class MasterServer(executionContext: ExecutionContext) { self =>
         val workerMetadata =
           WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
         addWorkerInfo(workerMetadata)
+        promise.success(RegisterReply())
       }(executionContext)
 
       promise.future

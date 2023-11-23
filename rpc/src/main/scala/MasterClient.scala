@@ -7,6 +7,9 @@ import kr.ac.postech.paranode.core.WorkerMetadata
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
+import kr.ac.postech.paranode.rpc.master.RegisterReply
+import scala.concurrent.Future
+
 import common.Node
 import master.MasterGrpc.MasterStub
 import master.{MasterGrpc, RegisterRequest}
@@ -44,7 +47,7 @@ class MasterClient private (
   /** Say hello to server. */
   def register(
       workerMetadata: WorkerMetadata
-  ): Unit = {
+  ): Future[RegisterReply] = {
     val request = RegisterRequest(
       Some(Node(workerMetadata.host, workerMetadata.port))
     )

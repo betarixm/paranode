@@ -2,7 +2,7 @@ package kr.ac.postech.paranode.worker
 
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.MasterClient
-
+import scala.util.{Failure, Success}
 import java.net.InetAddress
 import scala.util.Try
 
@@ -32,14 +32,20 @@ object Main {
 
     // Open MasterClient and request register
     val client = MasterClient(ip, port)
-    try {
-      val ipAddress = InetAddress.getLocalHost.getHostAddress
-      val workerMetadata = WorkerMetadata(ipAddress, -1, None)
-      client.register(workerMetadata)
+    val ipAddress = InetAddress.getLocalHost.getHostAddress
+    val workerMetadata = WorkerMetadata(ipAddress, -1, None)
+    val registerReply = client.register(workerMetadata)
+    registerReply.onComplete {
+      case Success(_) =>
+        client.shutdown()
+        //TODO: start WorkerServer
+      case Failure(exception) =>
+        println(s"Registration failed: ${exception.getMessage}")
+        client.shutdown()
+        System.exit(1)
+    }(scala.concurrent.ExecutionContext.global)
 
-    } finally {
-      client.shutdown()
-    }
+    //TODO: wait for SampleRequest (with sorting)
 
   }
 
