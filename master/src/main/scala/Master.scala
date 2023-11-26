@@ -11,34 +11,34 @@ import java.net._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Try
 
 object Master extends Logging {
   def main(args: Array[String]): Unit = {
-    val numberOfWorker = Try(args(0).toInt).getOrElse {
-      println("Invalid command")
-      return
-    }
+    val masterArguments = new MasterArguments(args)
+    val masterHost = InetAddress.getLocalHost.getHostAddress
+    val masterPort = sys.env.getOrElse("MASTER_PORT", "50051").toInt
 
-    val server = new MasterServer(scala.concurrent.ExecutionContext.global)
+    logger.debug(
+      "[Master] Arguments: \n" +
+        s"masterHost: $masterHost\n" +
+        s"masterPort: $masterPort\n" +
+        s"numberOfWorkers: ${masterArguments.numberOfWorkers}\n"
+    )
+
+    val server =
+      new MasterServer(scala.concurrent.ExecutionContext.global, masterPort)
+
     server.start()
 
-    while (server.getWorkerDetails.size < numberOfWorker) {
+    println(masterHost + ":" + server.port)
+
+    while (server.getWorkerDetails.size < masterArguments.numberOfWorkers) {
       Thread.sleep(1000)
     }
 
     val workerInfo: List[WorkerMetadata] = server.getWorkerDetails
 
-    assert(workerInfo.size == numberOfWorker)
-
-    try {
-      val ipAddress = InetAddress.getLocalHost.getHostAddress
-
-      println(ipAddress + ":" + server.port)
-      println(workerInfo.map(_.host).mkString(", "))
-    } catch {
-      case e: Exception => e.printStackTrace()
-    }
+    println(workerInfo.map(_.host).mkString(", "))
 
     val clients = workerInfo.map { worker =>
       WorkerClient(worker.host, worker.port)
@@ -52,23 +52,25 @@ object Master extends Logging {
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
-    logger.debug(s"Sampled keys: $sampledKeys")
+    logger.debug(s"[Master] Sampled keys: $sampledKeys")
 
     val sortedSampledKeys = sampledKeys.sorted
 
-    logger.debug(s"Sorted Sampled keys: $sortedSampledKeys")
+    logger.debug(s"[Master] Sorted Sampled keys: $sortedSampledKeys")
 
     val keyRanges = sortedSampledKeys
       .sliding(
-        sortedSampledKeys.size / numberOfWorker,
-        sortedSampledKeys.size / numberOfWorker
+        sortedSampledKeys.size / masterArguments.numberOfWorkers,
+        sortedSampledKeys.size / masterArguments.numberOfWorkers
       )
       .toList
       .map(keys => (keys.head, keys.last))
 
     val keyRangesWithWorker = workerInfo.zip(keyRanges.map(KeyRange.tupled))
 
-    logger.debug(s"Key ranges with worker: $keyRangesWithWorker")
+    logger.debug(s"[Master] Key ranges with worker: $keyRangesWithWorker")
+
+    logger.debug("[Master] Sort started")
 
     Await.result(
       Future.sequence(
@@ -77,12 +79,18 @@ object Master extends Logging {
       scala.concurrent.duration.Duration.Inf
     )
 
+    logger.debug("[Master] Sort finished")
+
+    logger.debug("[Master] Partition started")
+
     Await.result(
       Future.sequence(
         clients.map(_.partition(keyRangesWithWorker))
       ),
       scala.concurrent.duration.Duration.Inf
     )
+
+    logger.debug("[Master] Partition finished")
 
     server.blockUntilShutdown()
   }
