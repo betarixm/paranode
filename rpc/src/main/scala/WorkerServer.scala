@@ -6,15 +6,17 @@ import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.core._
 import org.apache.logging.log4j.scala.Logging
 
+import java.util.UUID
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.reflect.io.Directory
 import scala.reflect.io.Path
+
 import common.{WorkerMetadata => RpcWorkerMetadata}
 import worker._
-import java.util.UUID
 
 class WorkerServer(
     executionContext: ExecutionContext,
@@ -148,14 +150,6 @@ class WorkerServer(
                 logger.debug(
                   s"[WorkerServer] Wrote partition to $partitionPath"
                 )
-
-                if (path.exists && path.isFile) {
-                  val result = path.delete()
-
-                  logger.debug(
-                    s"[WorkerServer] Deleted $path: $result"
-                  )
-                }
               })
 
           })
@@ -167,10 +161,42 @@ class WorkerServer(
     }
 
     override def exchange(request: ExchangeRequest): Future[ExchangeReply] = {
-      val futures =
-        request.workers.map(_ => Future {}(executionContext))
+      val promise = Promise[ExchangeReply]
 
-      Future.sequence(futures).map(_ => new ExchangeReply())
+      Future {
+        logger.debug(s"[WorkerServer] Exchange ($request)")
+
+        val workers = toWorkerMetadata(request.workers)
+
+        inputFiles.foreach(path => {
+          val block = Block.fromPath(path)
+          val targetWorkers = workers
+            .filter(_.keyRange.get.includes(block.records.head.key))
+
+          logger.debug(s"[WorkerServer] Sending $block to $targetWorkers")
+
+          Await.result(
+            Future.sequence(
+              targetWorkers
+                .map(worker => WorkerClient(worker.host, worker.port))
+                .map(_.saveBlock(block))
+            ),
+            scala.concurrent.duration.Duration.Inf
+          )
+
+          if (path.exists && path.isFile) {
+            val result = path.delete()
+
+            logger.debug(
+              s"[WorkerServer] Deleted $path: $result"
+            )
+          }
+        })
+
+        promise.success(new ExchangeReply())
+      }
+
+      promise.future
     }
 
     override def saveBlock(

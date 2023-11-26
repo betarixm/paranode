@@ -92,6 +92,17 @@ object Master extends Logging {
 
     logger.debug("[Master] Partition finished")
 
+    logger.debug("[Master] Exchange started")
+
+    Await.result(
+      Future.sequence(
+        clients.map(_.exchange(keyRangesWithWorker))
+      ),
+      scala.concurrent.duration.Duration.Inf
+    )
+
+    logger.debug("[Master] Exchange finished")
+
     server.blockUntilShutdown()
   }
 

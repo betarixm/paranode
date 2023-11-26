@@ -3,11 +3,14 @@ package kr.ac.postech.paranode.rpc
 import com.google.protobuf.ByteString
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import kr.ac.postech.paranode.core.{Block, KeyRange, WorkerMetadata}
+import kr.ac.postech.paranode.core.Block
+import kr.ac.postech.paranode.core.KeyRange
+import kr.ac.postech.paranode.core.WorkerMetadata
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 import scala.concurrent.Future
+
 import worker._
 import worker.WorkerGrpc.WorkerStub
 import common.{
