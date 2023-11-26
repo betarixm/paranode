@@ -9,6 +9,11 @@ import scala.io.Source
 import scala.reflect.io.Path
 
 object Block extends Logging {
+
+  implicit class Blocks(blocks: List[Block]) {
+    def merged: Block = new Block(Record.merged(blocks.map(_.records)))
+  }
+
   def fromBytes(
       bytes: LazyList[Byte],
       keyLength: Int = 10,

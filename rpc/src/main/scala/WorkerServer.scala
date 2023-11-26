@@ -31,6 +31,8 @@ class WorkerServer(
 
   private def inputFiles = inputDirectories.flatMap(_.files)
 
+  private def outputFiles = outputDirectory.files.toList
+
   def start(): Unit = {
     server.start()
 
@@ -150,6 +152,11 @@ class WorkerServer(
                 logger.debug(
                   s"[WorkerServer] Wrote partition to $partitionPath"
                 )
+
+                if (path.exists && path.isFile) {
+                  val result = path.delete()
+                  logger.debug(s"[WorkerServer] Deleted $path: $result")
+                }
               })
 
           })
@@ -183,14 +190,6 @@ class WorkerServer(
             ),
             scala.concurrent.duration.Duration.Inf
           )
-
-          if (path.exists && path.isFile) {
-            val result = path.delete()
-
-            logger.debug(
-              s"[WorkerServer] Deleted $path: $result"
-            )
-          }
         })
 
         promise.success(new ExchangeReply())
@@ -229,19 +228,30 @@ class WorkerServer(
       val promise = Promise[MergeReply]
 
       Future {
-        try {
-          val host = Path("data/host")
-          val port = Path("data/port")
-          val blockPath = Path(s"data/partition/${host}:${port}")
-          val mergedBlock = Block.fromPath(blockPath, 10, 90).sorted
-          mergedBlock.writeTo(blockPath)
+        logger.debug(s"[WorkerServer] Merge ($request)")
+        val targetFiles = outputFiles
 
-          promise.success(new MergeReply())
-        } catch {
-          case e: Exception =>
-            println(e)
-            promise.failure(e)
-        }
+        val blocks = targetFiles.map(path => Block.fromPath(path))
+
+        logger.debug("[WorkerServer] Merging blocks")
+
+        val mergedBlock = blocks.merged
+
+        val results = mergedBlock.writeTo(outputDirectory / "result")
+
+        targetFiles.foreach(file => {
+          val result = file.delete()
+
+          logger.debug(
+            s"[WorkerServer] Deleted $file: $result"
+          )
+        })
+
+        logger.debug(
+          s"[WorkerServer] Merged blocks: $results"
+        )
+
+        promise.success(new MergeReply())
       }(executionContext)
 
       promise.future

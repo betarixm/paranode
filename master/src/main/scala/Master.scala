@@ -103,6 +103,17 @@ object Master extends Logging {
 
     logger.debug("[Master] Exchange finished")
 
+    logger.debug("[Master] Merge started")
+
+    Await.result(
+      Future.sequence(
+        clients.map(_.merge())
+      ),
+      scala.concurrent.duration.Duration.Inf
+    )
+
+    logger.debug("[Master] Merge finished")
+
     server.blockUntilShutdown()
   }
 

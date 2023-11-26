@@ -35,6 +35,27 @@ object Record extends Logging {
       records: LazyList[Record],
       number: Int = 64
   ): LazyList[Key] = records.take(number).map(_.key)
+
+  def merged(
+      listOfRecords: List[LazyList[Record]]
+  ): LazyList[Record] = {
+    if (listOfRecords.isEmpty) {
+      LazyList.empty
+    } else {
+      val sortedListOfRecords =
+        listOfRecords.sorted(Ordering.by((_: LazyList[Record]).head.key))
+
+      logger.debug(
+        s"[Record] Sorted list of records: ${sortedListOfRecords.map(_.head.key.hex).mkString(", ")}"
+      )
+
+      sortedListOfRecords.head.head #:: merged(
+        (sortedListOfRecords.head.tail :: sortedListOfRecords.tail).filter(
+          _.nonEmpty
+        )
+      )
+    }
+  }
 }
 
 class Record(val key: Key, val value: Array[Byte]) extends Ordered[Record] {
