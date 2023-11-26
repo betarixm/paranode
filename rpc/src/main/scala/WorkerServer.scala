@@ -27,11 +27,7 @@ class WorkerServer(
     .addService(WorkerGrpc.bindService(new WorkerImpl, executionContext))
     .build()
 
-  private def inputFiles = inputDirectories.flatMap(dir => {
-    logger.debug(s"Input directory: $dir")
-    logger.debug(s"Input directory files: ${dir.files.mkString(", ")}")
-    dir.files
-  })
+  private def inputFiles = inputDirectories.flatMap(_.files)
 
   def start(): Unit = {
     server.start()
