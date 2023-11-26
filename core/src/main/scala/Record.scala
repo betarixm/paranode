@@ -1,6 +1,8 @@
 package kr.ac.postech.paranode.core
 
-object Record {
+import org.apache.logging.log4j.scala.Logging
+
+object Record extends Logging {
   def fromString(string: String, keyLength: Int = 10): Record =
     Record.fromBytes(string.getBytes(), keyLength)
 
@@ -25,18 +27,10 @@ object Record {
       )
   }
 
-  def sampleWithInterval(
+  def sample(
       records: LazyList[Record],
-      interval: Int = 10
-  ): LazyList[Key] = {
-    if (records.isEmpty)
-      LazyList.empty[Key]
-    else {
-      val (current, rest) = records.splitAt(interval)
-      val head = current.head.key
-      head #:: sampleWithInterval(rest, interval)
-    }
-  }
+      number: Int = 64
+  ): LazyList[Key] = records.take(number).map(_.key)
 }
 
 class Record(val key: Key, val value: Array[Byte]) extends Ordered[Record] {
