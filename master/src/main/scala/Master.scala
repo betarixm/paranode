@@ -1,12 +1,15 @@
 package kr.ac.postech.paranode.master
 
-import kr.ac.postech.paranode.core.WorkerMetadata
-import kr.ac.postech.paranode.rpc.MasterServer
+import kr.ac.postech.paranode.core.{Key, WorkerMetadata}
+import kr.ac.postech.paranode.rpc.{MasterServer, WorkerClient}
+import org.apache.logging.log4j.scala.Logging
 
 import java.net._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
 import scala.util.Try
 
-object Main {
+object Master extends Logging {
   def main(args: Array[String]): Unit = {
     val numberOfWorker = Try(args(0).toInt).getOrElse {
       println("Invalid command")
@@ -32,8 +35,20 @@ object Main {
     } catch {
       case e: Exception => e.printStackTrace()
     }
-    // TODO: save workerInfo and start WorkerClient
 
+    val clients = workerInfo.map { worker =>
+      WorkerClient(worker.host, worker.port)
+    }
+
+    val sampledKeys = Await
+      .result(
+        Future.sequence(clients.map(_.sample(64))),
+        scala.concurrent.duration.Duration.Inf
+      )
+      .flatMap(_.sampledKeys)
+      .map(Key.fromByteString)
+
+    logger.debug(s"Sampled keys: $sampledKeys")
   }
 
 }
