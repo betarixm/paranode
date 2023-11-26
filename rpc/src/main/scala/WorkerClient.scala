@@ -8,14 +8,15 @@ import kr.ac.postech.paranode.core.WorkerMetadata
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
-
 import worker._
-import worker.WorkerGrpc.WorkerBlockingStub
+import worker.WorkerGrpc.WorkerStub
 import common.{
   Node,
   KeyRange => RpcKeyRange,
   WorkerMetadata => RpcWorkerMetadata
 }
+
+import scala.concurrent.Future
 
 object WorkerClient {
   def apply(host: String, port: Int): WorkerClient = {
@@ -23,14 +24,14 @@ object WorkerClient {
       .forAddress(host, port)
       .usePlaintext()
       .build
-    val blockingStub = WorkerGrpc.blockingStub(channel)
-    new WorkerClient(channel, blockingStub)
+    val stub = WorkerGrpc.stub(channel)
+    new WorkerClient(channel, stub)
   }
 }
 
 class WorkerClient private (
     private val channel: ManagedChannel,
-    private val blockingStub: WorkerBlockingStub
+    private val stub: WorkerStub
 ) {
   Logger.getLogger(classOf[WorkerClient].getName)
 
@@ -38,16 +39,16 @@ class WorkerClient private (
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
   }
 
-  def sample(numberOfKeys: Int): SampleReply = {
+  def sample(numberOfKeys: Int): Future[SampleReply] = {
     val request = SampleRequest(numberOfKeys)
-    val response = blockingStub.sample(request)
+    val response = stub.sample(request)
 
     response
   }
 
   def partition(
       workers: List[(WorkerMetadata, KeyRange)]
-  ): PartitionReply = {
+  ): Future[PartitionReply] = {
     val request = PartitionRequest(workers.map({ case (worker, keyRange) =>
       RpcWorkerMetadata(
         Some(Node(worker.host, worker.port)),
@@ -60,10 +61,12 @@ class WorkerClient private (
       )
     }))
 
-    blockingStub.partition(request)
+    stub.partition(request)
   }
 
-  def exchange(workers: List[(WorkerMetadata, KeyRange)]): ExchangeReply = {
+  def exchange(
+      workers: List[(WorkerMetadata, KeyRange)]
+  ): Future[ExchangeReply] = {
     val request = ExchangeRequest(workers.map({ case (worker, keyRange) =>
       RpcWorkerMetadata(
         Some(Node(worker.host, worker.port)),
@@ -76,11 +79,11 @@ class WorkerClient private (
       )
     }))
 
-    blockingStub.exchange(request)
+    stub.exchange(request)
   }
 
-  def merge(): MergeReply = {
+  def merge(): Future[MergeReply] = {
     val request = MergeRequest()
-    blockingStub.merge(request)
+    stub.merge(request)
   }
 }
