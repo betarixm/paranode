@@ -9,6 +9,7 @@ service Worker {
   rpc Sort (SortRequest) returns (SortReply) {}
   rpc Partition (PartitionRequest) returns (PartitionReply) {}
   rpc Exchange (ExchangeRequest) returns (ExchangeReply) {}
+  rpc SaveBlock (SaveBlockRequest) returns (SaveBlockReply) {}
   rpc Merge (MergeRequest) returns (MergeReply) {}
 }
 
@@ -35,6 +36,12 @@ message ExchangeRequest {
 }
 
 message ExchangeReply {}
+
+message SaveBlockRequest {
+  bytes block = 1;
+}
+
+message SaveBlockReply {}
 
 message MergeRequest {}
 

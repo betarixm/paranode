@@ -12,9 +12,9 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.reflect.io.Directory
 import scala.reflect.io.Path
-
 import common.{WorkerMetadata => RpcWorkerMetadata}
 import worker._
+import java.util.UUID
 
 class WorkerServer(
     executionContext: ExecutionContext,
@@ -163,6 +163,32 @@ class WorkerServer(
         request.workers.map(_ => Future {}(executionContext))
 
       Future.sequence(futures).map(_ => new ExchangeReply())
+    }
+
+    override def saveBlock(
+        request: SaveBlockRequest
+    ): Future[SaveBlockReply] = {
+      val promise = Promise[SaveBlockReply]
+
+      Future {
+        logger.debug(s"[WorkerServer] SaveBlock ($request)")
+
+        val block = Block.fromBytes(
+          LazyList.from(request.block.toByteArray)
+        )
+
+        val path = outputDirectory / UUID.randomUUID().toString
+
+        logger.debug(s"[WorkerServer] Writing block to $path")
+
+        block.writeTo(path)
+
+        logger.debug(s"[WorkerServer] Wrote block to $path")
+
+        promise.success(new SaveBlockReply())
+      }
+
+      promise.future
     }
 
     override def merge(request: MergeRequest): Future[MergeReply] = {
