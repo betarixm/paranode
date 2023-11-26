@@ -168,7 +168,7 @@ class BlockSpec extends AnyFlatSpec {
       )
     )
 
-    val sortedBlock = block.sort()
+    val sortedBlock = block.sorted
 
     val expectedBlock =
       new Block(
