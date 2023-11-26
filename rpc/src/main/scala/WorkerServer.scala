@@ -148,6 +148,14 @@ class WorkerServer(
                 logger.debug(
                   s"[WorkerServer] Wrote partition to $partitionPath"
                 )
+
+                if (path.exists && path.isFile) {
+                  val result = path.delete()
+
+                  logger.debug(
+                    s"[WorkerServer] Deleted $path: $result"
+                  )
+                }
               })
 
           })
