@@ -10,33 +10,46 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.reflect.io.Directory
 import scala.reflect.io.Path
 
+import common.{WorkerMetadata => RpcWorkerMetadata}
 import worker._
 
 class WorkerServer(
     executionContext: ExecutionContext,
     port: Int,
-    inputDirectories: Array[Path],
-    outputDirectory: Path
+    inputDirectories: Array[Directory],
+    outputDirectory: Directory
 ) extends Logging { self =>
   private[this] val server: Server = ServerBuilder
     .forPort(port)
     .addService(WorkerGrpc.bindService(new WorkerImpl, executionContext))
     .build()
 
+  private def inputFiles = inputDirectories.flatMap(dir => {
+    logger.debug(s"Input directory: $dir")
+    logger.debug(s"Input directory files: ${dir.files.mkString(", ")}")
+    dir.files
+  })
+
   def start(): Unit = {
     server.start()
 
     logger.debug(
-      s"WorkerServer listening on port $port with inputDirectories: ${inputDirectories
-          .mkString(", ")} and outputDirectory: $outputDirectory"
+      "[WorkerServer] \n" +
+        s"port: $port\n" +
+        s"inputDirectories: ${inputDirectories.mkString(", ")}\n" +
+        s"inputFiles: ${inputFiles.mkString(", ")}\n" +
+        s"outputDirectory: $outputDirectory\n"
     )
 
     sys.addShutdownHook {
-      logger.error("*** shutting down gRPC server since JVM is shutting down")
+      logger.error(
+        "[WorkerServer] shutting down gRPC server since JVM is shutting down"
+      )
       self.stop()
-      logger.error("*** server shut down")
+      logger.error("[WorkerServer] server shut down")
     }
   }
 
@@ -53,27 +66,58 @@ class WorkerServer(
   }
 
   private class WorkerImpl extends WorkerGrpc.Worker {
+    private def toWorkerMetadata(workers: Seq[RpcWorkerMetadata]) =
+      workers.map(worker =>
+        WorkerMetadata(
+          worker.node.get.host,
+          worker.node.get.port,
+          worker.keyRange.map(keyRange =>
+            KeyRange(
+              Key.fromByteString(keyRange.from),
+              Key.fromByteString(keyRange.to)
+            )
+          )
+        )
+      )
+
     override def sample(request: SampleRequest): Future[SampleReply] = {
       val promise = Promise[SampleReply]
 
       Future {
-        logger.debug(s"Sample request: $request")
+        logger.debug(s"[WorkerServer] Sample ($request)")
 
-        try {
-          val sampledKeys = inputDirectories
-            .map(_.toDirectory)
-            .flatMap(_.list)
-            .map(f => Block.fromPath(f.path))
-            .flatMap(_.sample(request.numberOfKeys))
-            .map(key => ByteString.copyFrom(key.underlying))
+        val sampledKeys = inputFiles
+          .map(f => Block.fromPath(f.path))
+          .flatMap(_.sample(request.numberOfKeys))
+          .map(key => ByteString.copyFrom(key.underlying))
 
-          promise.success(SampleReply(sampledKeys))
-        } catch {
-          case e: Exception =>
-            println(e)
-            promise.failure(e)
-        }
+        promise.success(SampleReply(sampledKeys))
       }(executionContext)
+
+      promise.future
+    }
+
+    override def sort(request: SortRequest): Future[SortReply] = {
+      val promise = Promise[SortReply]
+
+      Future {
+        logger.debug(s"[WorkerServer] Sort ($request)")
+
+        inputFiles
+          .foreach(path => {
+            val block = Block.fromPath(path)
+
+            val sortedBlock = block.sorted
+
+            logger.debug(s"[WorkerServer] Writing sorted block to $path")
+
+            sortedBlock.writeTo(path)
+
+            logger.debug(s"[WorkerServer] Wrote sorted block to $path")
+          })
+
+        promise.success(new SortReply())
+      }
 
       promise.future
     }
@@ -84,55 +128,43 @@ class WorkerServer(
       val promise = Promise[PartitionReply]
 
       Future {
-        try {
-          val block = Block.fromPath(Path("data/block"), 10, 90)
-          request.workers
-            .map(workerMetadata => {
-              val keyRange = KeyRange(
-                Key.fromString(workerMetadata.keyRange.get.from.toStringUtf8),
-                Key.fromString(workerMetadata.keyRange.get.to.toStringUtf8)
-              )
-              val partition = block.partition(keyRange)
-              val partitionPath = Path(
-                s"data/partition/${workerMetadata.node.get.host}:${workerMetadata.node.get.port}"
-              )
-              partition._2.writeTo(partitionPath)
-            })
+        logger.debug(s"[WorkerServer] Partition ($request)")
 
-          promise.success(new PartitionReply())
-        } catch {
-          case e: Exception =>
-            println(e)
-            promise.failure(e)
-        }
+        val workers = toWorkerMetadata(request.workers)
+
+        inputFiles
+          .map(path => {
+            val block = Block.fromPath(path)
+            workers
+              .map(_.keyRange.get)
+              .map(block.partition)
+              .map({ case (keyRange, partition) =>
+                val partitionPath = Path(
+                  s"$path.${keyRange.from.hex}-${keyRange.to.hex}"
+                )
+
+                logger.debug(
+                  s"[WorkerServer] Writing partition to $partitionPath"
+                )
+
+                partition.writeTo(partitionPath)
+
+                logger.debug(
+                  s"[WorkerServer] Wrote partition to $partitionPath"
+                )
+              })
+
+          })
+
+        promise.success(new PartitionReply())
       }(executionContext)
 
       promise.future
     }
 
     override def exchange(request: ExchangeRequest): Future[ExchangeReply] = {
-      val futures = request.workers.map(workerMetadata =>
-        Future {
-          val host = workerMetadata.node.get.host
-          val port = workerMetadata.node.get.port
-          val partitionPath = Path(s"data/partition/${host}:${port}")
-
-          try {
-            if (partitionPath.exists) {
-              val partition = Block.fromPath(partitionPath, 10, 90)
-              val exchangeClient = ExchangeClient.apply(host, port)
-              val reply = exchangeClient.saveRecords(partition.records)
-              Some(reply)
-            } else {
-              None
-            }
-          } finally {
-            if (partitionPath.exists) {
-              partitionPath.delete()
-            }
-          }
-        }(executionContext)
-      )
+      val futures =
+        request.workers.map(_ => Future {}(executionContext))
 
       Future.sequence(futures).map(_ => new ExchangeReply())
     }
@@ -145,7 +177,7 @@ class WorkerServer(
           val host = Path("data/host")
           val port = Path("data/port")
           val blockPath = Path(s"data/partition/${host}:${port}")
-          val mergedBlock = Block.fromPath(blockPath, 10, 90).sort()
+          val mergedBlock = Block.fromPath(blockPath, 10, 90).sorted
           mergedBlock.writeTo(blockPath)
 
           promise.success(new MergeReply())
@@ -158,6 +190,7 @@ class WorkerServer(
 
       promise.future
     }
+
   }
 
 }

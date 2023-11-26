@@ -46,6 +46,13 @@ class WorkerClient private (
     response
   }
 
+  def sort(): Future[SortReply] = {
+    val request = SortRequest()
+    val response = stub.sort(request)
+
+    response
+  }
+
   def partition(
       workers: List[(WorkerMetadata, KeyRange)]
   ): Future[PartitionReply] = {
