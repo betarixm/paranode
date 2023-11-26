@@ -30,13 +30,13 @@ object Master extends Logging {
 
     server.start()
 
-    println(masterHost + ":" + server.port)
+    println(masterHost + ":" + masterPort)
 
-    while (server.getWorkerDetails.size < masterArguments.numberOfWorkers) {
+    while (server.registeredWorkers.size < masterArguments.numberOfWorkers) {
       Thread.sleep(1000)
     }
 
-    val workerInfo: List[WorkerMetadata] = server.getWorkerDetails
+    val workerInfo: List[WorkerMetadata] = server.registeredWorkers
 
     println(workerInfo.map(_.host).mkString(", "))
 

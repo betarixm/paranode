@@ -9,24 +9,28 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-
 import master.{MasterGrpc, RegisterReply, RegisterRequest}
 import Implicit._
 
-class MasterServer(executionContext: ExecutionContext, val port: Int = 50051)
-    extends Logging { self =>
-  private[this] val server: Server = ServerBuilder
-    .forPort(port)
-    .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
-    .build()
+import kr.ac.postech.paranode.utils.MutableState
 
-  private val workerDetails: ListBuffer[WorkerMetadata] = ListBuffer()
+class MasterServer(executionContext: ExecutionContext, port: Int = 50051)
+    extends Logging {
 
-  def addWorkerInfo(workerMetadata: WorkerMetadata): Unit = synchronized {
-    workerDetails += workerMetadata
-  }
+  private[this] val workers: MutableState[List[WorkerMetadata]] =
+    new MutableState(List.empty)
 
-  def getWorkerDetails: List[WorkerMetadata] = workerDetails.toList
+  val server: Server =
+    ServerBuilder
+      .forPort(port)
+      .addService(
+        MasterGrpc
+          .bindService(
+            new MasterService(executionContext, workers),
+            executionContext
+          )
+      )
+      .build()
 
   def start(): Unit = {
     server.start()
@@ -40,7 +44,7 @@ class MasterServer(executionContext: ExecutionContext, val port: Int = 50051)
       logger.error(
         "[MasterServer] shutting down gRPC server since JVM is shutting down"
       )
-      self.stop()
+      stop()
       logger.error("[MasterServer] server shut down")
     }
   }
@@ -57,19 +61,5 @@ class MasterServer(executionContext: ExecutionContext, val port: Int = 50051)
     }
   }
 
-  private class MasterImpl extends MasterGrpc.Master {
-    override def register(request: RegisterRequest): Future[RegisterReply] = {
-      val promise = Promise[RegisterReply]
-
-      Future {
-        logger.debug(s"[MasterServer] Register ($request)")
-
-        val workerMetadata: WorkerMetadata = request.worker.get
-
-        addWorkerInfo(workerMetadata)
-      }(executionContext)
-
-      promise.future
-    }
-  }
+  def registeredWorkers: List[WorkerMetadata] = workers.get
 }
