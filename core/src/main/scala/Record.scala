@@ -16,15 +16,19 @@ object Record extends Logging {
       keyLength: Int = 10,
       valueLength: Int = 90
   ): LazyList[Record] = {
-    val recordLength = keyLength + valueLength
-    val (head, tail) = bytes.splitAt(recordLength)
+    if (bytes.isEmpty) {
+      LazyList.empty
+    } else {
+      val recordLength = keyLength + valueLength
+      val (head, tail) = bytes.splitAt(recordLength)
 
-    Record.fromBytes(head.toArray, keyLength) #:: Record
-      .fromBytesToRecords(
-        tail,
-        keyLength,
-        valueLength
-      )
+      Record.fromBytes(head.toArray, keyLength) #:: Record
+        .fromBytesToRecords(
+          tail,
+          keyLength,
+          valueLength
+        )
+    }
   }
 
   def sample(
