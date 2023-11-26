@@ -1,12 +1,14 @@
 package kr.ac.postech.paranode.core
 
+import org.apache.logging.log4j.scala.Logging
+
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import scala.io.Source
 import scala.reflect.io.Path
 
-object Block {
+object Block extends Logging {
   def fromBytes(
       bytes: LazyList[Byte],
       keyLength: Int = 10,
@@ -28,8 +30,11 @@ object Block {
       path: Path,
       keyLength: Int = 10,
       valueLength: Int = 90
-  ): Block =
+  ): Block = {
+    logger.debug(s"Reading block from $path")
+
     Block.fromSource(Source.fromURI(path.toURI), keyLength, valueLength)
+  }
 
 }
 
@@ -60,7 +65,7 @@ class Block(val records: LazyList[Record]) extends AnyVal {
   def sort(): Block =
     new Block(records.sortBy(_.key))
 
-  def sample(): LazyList[Key] =
-    Record.sampleWithInterval(records)
+  def sample(number: Int = 64): LazyList[Key] =
+    Record.sample(records, number)
 
 }
