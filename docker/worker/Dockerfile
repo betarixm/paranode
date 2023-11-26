@@ -14,7 +14,16 @@ COPY docker/worker/data /data
 
 WORKDIR /app
 
-COPY project/build.properties project/plugins.sbt project/scalapb.sbt /app/project/
+COPY build.sbt ./
+COPY core/build.sbt ./core/
+COPY master/build.sbt ./master/
+COPY rpc/build.sbt ./rpc/
+COPY utils/build.sbt ./utils/
+COPY worker/build.sbt ./worker/
+COPY rpc/src/main/protobuf  ./rpc/src/main/protobuf
+COPY project/build.properties project/plugins.sbt project/scalapb.sbt ./project/
+
+RUN sbt --batch compile
 
 COPY . .
 
