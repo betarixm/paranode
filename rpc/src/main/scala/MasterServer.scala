@@ -3,24 +3,19 @@ package kr.ac.postech.paranode.rpc
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.core.WorkerMetadata
-import kr.ac.postech.paranode.rpc.MasterServer.port
 import org.apache.logging.log4j.scala.Logging
 
 import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.WrappedArray
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 
 import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
-object MasterServer {
-  private val port = 50051
-}
-
-class MasterServer(executionContext: ExecutionContext) extends Logging { self =>
+class MasterServer(executionContext: ExecutionContext, val port: Int = 50051)
+    extends Logging { self =>
   private[this] val server: Server = ServerBuilder
-    .forPort(MasterServer.port)
+    .forPort(port)
     .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
     .build()
 
@@ -32,30 +27,32 @@ class MasterServer(executionContext: ExecutionContext) extends Logging { self =>
 
   def getWorkerDetails: List[WorkerMetadata] = workerDetails.toList
 
-  def getPort: String = port.toString
-
-  private def start(): Unit = {
+  def start(): Unit = {
     server.start()
 
-    logger.info(
-      s"MasterServer listening on port $port"
+    logger.debug(
+      "[MasterServer] \n" +
+        s"port: $port\n"
     )
 
     sys.addShutdownHook {
       logger.error(
-        "*** shutting down gRPC server since JVM is shutting down"
+        "[MasterServer] shutting down gRPC server since JVM is shutting down"
       )
       self.stop()
-      logger.error("*** server shut down")
+      logger.error("[MasterServer] server shut down")
     }
   }
 
-  def startServer(): Unit = this.start()
-  def stopServer(): Unit = this.stop()
-
-  private def stop(): Unit = {
+  def stop(): Unit = {
     if (server != null) {
       server.shutdown()
+    }
+  }
+
+  def blockUntilShutdown(): Unit = {
+    if (server != null) {
+      server.awaitTermination()
     }
   }
 
@@ -64,7 +61,7 @@ class MasterServer(executionContext: ExecutionContext) extends Logging { self =>
       val promise = Promise[RegisterReply]
 
       Future {
-        logger.debug(s"Register request: $request")
+        logger.debug(s"[MasterServer] Register ($request)")
 
         val workerMetadata =
           WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
