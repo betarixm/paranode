@@ -4,16 +4,15 @@ import io.grpc.Server
 import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.MasterServer.port
+import org.apache.logging.log4j.scala.Logging
 
-import java.util.logging.Logger
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.WrappedArray
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
-import org.apache.logging.log4j.scala.Logging
+import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
 object MasterServer {
   private val port = 50051
@@ -57,12 +56,6 @@ class MasterServer(executionContext: ExecutionContext) extends Logging { self =>
   private def stop(): Unit = {
     if (server != null) {
       server.shutdown()
-    }
-  }
-
-  private def blockUntilShutdown(): Unit = {
-    if (server != null) {
-      server.awaitTermination()
     }
   }
 

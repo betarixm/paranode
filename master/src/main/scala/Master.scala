@@ -1,12 +1,15 @@
 package kr.ac.postech.paranode.master
 
-import kr.ac.postech.paranode.core.{Key, WorkerMetadata}
-import kr.ac.postech.paranode.rpc.{MasterServer, WorkerClient}
+import kr.ac.postech.paranode.core.Key
+import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.rpc.MasterServer
+import kr.ac.postech.paranode.rpc.WorkerClient
 import org.apache.logging.log4j.scala.Logging
 
 import java.net._
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.util.Try
 
 object Master extends Logging {

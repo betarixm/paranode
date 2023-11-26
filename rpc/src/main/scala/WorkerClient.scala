@@ -8,6 +8,8 @@ import kr.ac.postech.paranode.core.WorkerMetadata
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
+import scala.concurrent.Future
+
 import worker._
 import worker.WorkerGrpc.WorkerStub
 import common.{
@@ -15,8 +17,6 @@ import common.{
   KeyRange => RpcKeyRange,
   WorkerMetadata => RpcWorkerMetadata
 }
-
-import scala.concurrent.Future
 
 object WorkerClient {
   def apply(host: String, port: Int): WorkerClient = {

@@ -6,11 +6,11 @@ import kr.ac.postech.paranode.core.WorkerMetadata
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
+import scala.concurrent.Future
+
 import common.Node
 import master.MasterGrpc.MasterStub
 import master.{MasterGrpc, RegisterReply, RegisterRequest}
-
-import scala.concurrent.Future
 
 object MasterClient {
   def apply(host: String, port: Int): MasterClient = {

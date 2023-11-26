@@ -1,14 +1,15 @@
 package kr.ac.postech.paranode.worker
 
 import kr.ac.postech.paranode.core.WorkerMetadata
-import kr.ac.postech.paranode.rpc.{MasterClient, WorkerServer}
-
-import java.net.{InetAddress, ServerSocket}
-import scala.util.Using
-import scala.reflect.io.Path
+import kr.ac.postech.paranode.rpc.MasterClient
+import kr.ac.postech.paranode.rpc.WorkerServer
 import org.apache.logging.log4j.scala.Logging
 
+import java.net.InetAddress
+import java.net.ServerSocket
 import scala.concurrent.Await
+import scala.reflect.io.Path
+import scala.util.Using
 
 object Worker extends Logging {
   private class WorkerArguments(args: Array[String]) {
@@ -32,7 +33,7 @@ object Worker extends Logging {
     val workerArguments = new WorkerArguments(args)
 
     logger.debug(
-      s"Worker arguments: \n" +
+      "Worker arguments: \n" +
         s"masterIp: ${workerArguments.masterIp}\n" +
         s"masterPort: ${workerArguments.masterPort}\n" +
         s"inputDirectories: ${workerArguments.inputDirectories().mkString(", ")}\n" +
@@ -65,7 +66,6 @@ object Worker extends Logging {
     } finally {
       client.shutdown()
     }
-
 
     server.blockUntilShutdown()
   }

@@ -4,16 +4,15 @@ import com.google.protobuf.ByteString
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.core._
+import org.apache.logging.log4j.scala.Logging
 
-import java.util.logging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.reflect.io.Path
-import worker._
 
-import org.apache.logging.log4j.scala.Logging
+import worker._
 
 class WorkerServer(
     executionContext: ExecutionContext,
