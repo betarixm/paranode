@@ -3,16 +3,12 @@ package kr.ac.postech.paranode.rpc
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.utils.MutableState
 import org.apache.logging.log4j.scala.Logging
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import master.{MasterGrpc, RegisterReply, RegisterRequest}
-import Implicit._
 
-import kr.ac.postech.paranode.utils.MutableState
+import master.MasterGrpc
 
 class MasterServer(executionContext: ExecutionContext, port: Int = 50051)
     extends Logging {

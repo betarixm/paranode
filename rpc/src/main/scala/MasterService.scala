@@ -1,14 +1,15 @@
 package kr.ac.postech.paranode.rpc
 
-import master.{MasterGrpc, RegisterReply, RegisterRequest}
-
 import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.utils.MutableState
 import org.apache.logging.log4j.scala.Logging
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import Implicit._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
 
-import kr.ac.postech.paranode.utils.MutableState
+import master.{MasterGrpc, RegisterReply, RegisterRequest}
+import Implicit._
 
 class MasterService(
     executionContext: ExecutionContext,
