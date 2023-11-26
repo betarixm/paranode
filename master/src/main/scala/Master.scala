@@ -8,11 +8,24 @@ import kr.ac.postech.paranode.rpc.WorkerClient
 import org.apache.logging.log4j.scala.Logging
 
 import java.net._
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 object Master extends Logging {
+  private def workersWithKeyRange(
+      keys: List[Key],
+      workers: List[WorkerMetadata]
+  ): List[WorkerMetadata] =
+    keys
+      .sliding(
+        keys.size / workers.size,
+        keys.size / workers.size
+      )
+      .toList
+      .map(keys => KeyRange.tupled(keys.head, keys.last))
+      .zip(workers)
+      .map { case (keyRange, worker) =>
+        worker.copy(keyRange = Some(keyRange))
+      }
+
   def main(args: Array[String]): Unit = {
     val masterArguments = new MasterArguments(args)
     val masterHost = InetAddress.getLocalHost.getHostAddress
@@ -45,11 +58,8 @@ object Master extends Logging {
       WorkerClient(worker.host, worker.port)
     }
 
-    val sampledKeys = Await
-      .result(
-        Future.sequence(clients.map(_.sample(64))),
-        scala.concurrent.duration.Duration.Inf
-      )
+    val sampledKeys = clients
+      .sample(64)
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
@@ -59,59 +69,31 @@ object Master extends Logging {
 
     logger.debug(s"[Master] Sorted Sampled keys: $sortedSampledKeys")
 
-    val keyRanges = sortedSampledKeys
-      .sliding(
-        sortedSampledKeys.size / masterArguments.numberOfWorkers,
-        sortedSampledKeys.size / masterArguments.numberOfWorkers
-      )
-      .toList
-      .map(keys => (keys.head, keys.last))
+    val workers = workersWithKeyRange(sortedSampledKeys, workerInfo)
 
-    val keyRangesWithWorker = workerInfo.zip(keyRanges.map(KeyRange.tupled))
-
-    logger.debug(s"[Master] Key ranges with worker: $keyRangesWithWorker")
+    logger.debug(s"[Master] Key ranges with worker: $workers")
 
     logger.debug("[Master] Sort started")
 
-    Await.result(
-      Future.sequence(
-        clients.map(_.sort())
-      ),
-      scala.concurrent.duration.Duration.Inf
-    )
+    clients.sort()
 
     logger.debug("[Master] Sort finished")
 
     logger.debug("[Master] Partition started")
 
-    Await.result(
-      Future.sequence(
-        clients.map(_.partition(keyRangesWithWorker))
-      ),
-      scala.concurrent.duration.Duration.Inf
-    )
+    clients.partition(workers)
 
     logger.debug("[Master] Partition finished")
 
     logger.debug("[Master] Exchange started")
 
-    Await.result(
-      Future.sequence(
-        clients.map(_.exchange(keyRangesWithWorker))
-      ),
-      scala.concurrent.duration.Duration.Inf
-    )
+    clients.exchange(workers)
 
     logger.debug("[Master] Exchange finished")
 
     logger.debug("[Master] Merge started")
 
-    Await.result(
-      Future.sequence(
-        clients.map(_.merge())
-      ),
-      scala.concurrent.duration.Duration.Inf
-    )
+    clients.merge()
 
     logger.debug("[Master] Merge finished")
 

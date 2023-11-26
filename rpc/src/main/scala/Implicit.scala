@@ -43,4 +43,26 @@ object Implicit {
   implicit def toBlock(
       rpcBlock: ByteString
   ): Block = Block.fromBytes(LazyList.from(rpcBlock.toByteArray))
+
+  implicit def toRpcKeyRange(
+      keyRange: KeyRange
+  ): RpcKeyRange = RpcKeyRange(
+    ByteString.copyFrom(keyRange.from.underlying),
+    ByteString.copyFrom(keyRange.to.underlying)
+  )
+
+  implicit def toRpcWorkerMetadata(
+      workerMetadata: WorkerMetadata
+  ): RpcWorkerMetadata = RpcWorkerMetadata(
+    Some(RpcNode(workerMetadata.host, workerMetadata.port)),
+    workerMetadata.keyRange.map(toRpcKeyRange)
+  )
+
+  implicit def toRpcWorkerMetadata(
+      workerMetadata: List[WorkerMetadata]
+  ): List[RpcWorkerMetadata] = workerMetadata.map(toRpcWorkerMetadata)
+
+  implicit def toByteString(
+      block: Block
+  ): ByteString = ByteString.copyFrom(block.toChars.map(_.toByte).toArray)
 }

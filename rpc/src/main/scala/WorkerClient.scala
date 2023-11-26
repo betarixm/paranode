@@ -1,25 +1,57 @@
 package kr.ac.postech.paranode.rpc
-
-import com.google.protobuf.ByteString
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import kr.ac.postech.paranode.core.Block
-import kr.ac.postech.paranode.core.KeyRange
 import kr.ac.postech.paranode.core.WorkerMetadata
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import worker._
 import worker.WorkerGrpc.WorkerStub
-import common.{
-  Node,
-  KeyRange => RpcKeyRange,
-  WorkerMetadata => RpcWorkerMetadata
-}
+import Implicit._
 
 object WorkerClient {
+
+  implicit class WorkerClients(val clients: List[WorkerClient]) {
+    def sample(numberOfKeys: Int): List[SampleReply] =
+      Await.result(
+        Future.sequence(clients.map(_.sample(numberOfKeys))),
+        scala.concurrent.duration.Duration.Inf
+      )
+
+    def sort(): List[SortReply] =
+      Await.result(
+        Future.sequence(clients.map(_.sort())),
+        scala.concurrent.duration.Duration.Inf
+      )
+
+    def partition(
+        keyRanges: List[WorkerMetadata]
+    ): List[PartitionReply] =
+      Await.result(
+        Future.sequence(clients.map(_.partition(keyRanges))),
+        scala.concurrent.duration.Duration.Inf
+      )
+
+    def exchange(
+        keyRanges: List[WorkerMetadata]
+    ): List[ExchangeReply] =
+      Await.result(
+        Future.sequence(clients.map(_.exchange(keyRanges))),
+        scala.concurrent.duration.Duration.Inf
+      )
+
+    def merge(): List[MergeReply] =
+      Await.result(
+        Future.sequence(clients.map(_.merge())),
+        scala.concurrent.duration.Duration.Inf
+      )
+  }
+
   def apply(host: String, port: Int): WorkerClient = {
     val channel = ManagedChannelBuilder
       .forAddress(host, port)
@@ -28,6 +60,7 @@ object WorkerClient {
     val stub = WorkerGrpc.stub(channel)
     new WorkerClient(channel, stub)
   }
+
 }
 
 class WorkerClient private (
@@ -55,37 +88,17 @@ class WorkerClient private (
   }
 
   def partition(
-      workers: List[(WorkerMetadata, KeyRange)]
+      workers: List[WorkerMetadata]
   ): Future[PartitionReply] = {
-    val request = PartitionRequest(workers.map({ case (worker, keyRange) =>
-      RpcWorkerMetadata(
-        Some(Node(worker.host, worker.port)),
-        Some(
-          RpcKeyRange(
-            ByteString.copyFrom(keyRange.from.underlying),
-            ByteString.copyFrom(keyRange.to.underlying)
-          )
-        )
-      )
-    }))
+    val request = PartitionRequest(workers)
 
     stub.partition(request)
   }
 
   def exchange(
-      workers: List[(WorkerMetadata, KeyRange)]
+      workers: List[WorkerMetadata]
   ): Future[ExchangeReply] = {
-    val request = ExchangeRequest(workers.map({ case (worker, keyRange) =>
-      RpcWorkerMetadata(
-        Some(Node(worker.host, worker.port)),
-        Some(
-          RpcKeyRange(
-            ByteString.copyFrom(keyRange.from.underlying),
-            ByteString.copyFrom(keyRange.to.underlying)
-          )
-        )
-      )
-    }))
+    val request = ExchangeRequest(workers)
 
     stub.exchange(request)
   }
@@ -93,9 +106,7 @@ class WorkerClient private (
   def saveBlock(
       block: Block
   ): Future[SaveBlockReply] = {
-    val request = SaveBlockRequest(
-      ByteString.copyFrom(block.toChars.map(_.toByte).toArray)
-    )
+    val request = SaveBlockRequest(block)
 
     stub.saveBlock(request)
   }
