@@ -33,6 +33,7 @@ object Master extends Logging {
     println(masterHost + ":" + masterPort)
 
     while (server.registeredWorkers.size < masterArguments.numberOfWorkers) {
+      logger.debug(s"${server.registeredWorkers}")
       Thread.sleep(1000)
     }
 
