@@ -13,6 +13,8 @@ object Key {
 class Key(val underlying: Array[Byte]) extends AnyVal with Ordered[Key] {
   def is(that: Key): Boolean = underlying sameElements that.underlying
 
+  def hex = underlying.map("%02x" format _).mkString
+
   override def compare(that: Key): Int = underlying
     .zip(that.underlying)
     .map { case (a, b) =>
