@@ -1,7 +1,13 @@
 package kr.ac.postech.paranode.core
 
+import com.google.protobuf.ByteString
+
 object Key {
   def fromString(string: String): Key = new Key(string.getBytes())
+
+  def fromByteString(byteString: ByteString): Key = new Key(
+    byteString.toByteArray
+  )
 }
 
 class Key(val underlying: Array[Byte]) extends AnyVal with Ordered[Key] {
