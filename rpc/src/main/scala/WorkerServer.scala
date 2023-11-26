@@ -15,7 +15,7 @@ import scala.concurrent.Promise
 import scala.reflect.io.Directory
 import scala.reflect.io.Path
 
-import common.{WorkerMetadata => RpcWorkerMetadata}
+import Implicit._
 import worker._
 
 class WorkerServer(
@@ -66,19 +66,6 @@ class WorkerServer(
   }
 
   private class WorkerImpl extends WorkerGrpc.Worker {
-    private def toWorkerMetadata(workers: Seq[RpcWorkerMetadata]) =
-      workers.map(worker =>
-        WorkerMetadata(
-          worker.node.get.host,
-          worker.node.get.port,
-          worker.keyRange.map(keyRange =>
-            KeyRange(
-              Key.fromByteString(keyRange.from),
-              Key.fromByteString(keyRange.to)
-            )
-          )
-        )
-      )
 
     override def sample(request: SampleRequest): Future[SampleReply] = {
       val promise = Promise[SampleReply]
@@ -130,7 +117,7 @@ class WorkerServer(
       Future {
         logger.debug(s"[WorkerServer] Partition ($request)")
 
-        val workers = toWorkerMetadata(request.workers)
+        val workers: Seq[WorkerMetadata] = request.workers
 
         inputFiles
           .map(path => {
@@ -173,7 +160,7 @@ class WorkerServer(
       Future {
         logger.debug(s"[WorkerServer] Exchange ($request)")
 
-        val workers = toWorkerMetadata(request.workers)
+        val workers: Seq[WorkerMetadata] = request.workers
 
         inputFiles.foreach(path => {
           val block = Block.fromPath(path)
@@ -206,9 +193,7 @@ class WorkerServer(
       Future {
         logger.debug(s"[WorkerServer] SaveBlock ($request)")
 
-        val block = Block.fromBytes(
-          LazyList.from(request.block.toByteArray)
-        )
+        val block: Block = request.block
 
         val path = outputDirectory / UUID.randomUUID().toString
 

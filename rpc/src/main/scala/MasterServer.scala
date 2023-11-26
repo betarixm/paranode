@@ -11,6 +11,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 
 import master.{MasterGrpc, RegisterReply, RegisterRequest}
+import Implicit._
 
 class MasterServer(executionContext: ExecutionContext, val port: Int = 50051)
     extends Logging { self =>
@@ -63,8 +64,8 @@ class MasterServer(executionContext: ExecutionContext, val port: Int = 50051)
       Future {
         logger.debug(s"[MasterServer] Register ($request)")
 
-        val workerMetadata =
-          WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
+        val workerMetadata: WorkerMetadata = request.worker.get
+
         addWorkerInfo(workerMetadata)
       }(executionContext)
 
