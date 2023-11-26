@@ -20,4 +20,4 @@ COPY . .
 
 RUN sbt --batch compile
 
-ENTRYPOINT sbt --batch -v "worker/run ${MASTER_HOST}:${MASTER_PORT} -I /data/0 data/1 data/2 -O /output/"
+ENTRYPOINT sbt --batch -v "worker/run ${MASTER_HOST}:${MASTER_PORT} -I /data/0 /data/1 /data/2 -O /output/"
