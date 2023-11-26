@@ -11,50 +11,43 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.reflect.io.Path
-
 import worker._
 
-object WorkerServer {
-  private val logger = Logger.getLogger(classOf[WorkerServer].getName)
+import org.apache.logging.log4j.scala.Logging
 
-  def main(args: Array[String]): Unit = {
-    val server = new WorkerServer(ExecutionContext.global)
-    server.start()
-    server.blockUntilShutdown()
-  }
-
-  private val port = 30040
-}
-
-class WorkerServer(executionContext: ExecutionContext) { self =>
+class WorkerServer(
+    executionContext: ExecutionContext,
+    port: Int,
+    inputDirectories: Array[Path],
+    outputDirectory: Path
+) extends Logging { self =>
   private[this] val server: Server = ServerBuilder
-    .forPort(WorkerServer.port)
+    .forPort(port)
     .addService(WorkerGrpc.bindService(new WorkerImpl, executionContext))
     .build()
 
-  private def start(): Unit = {
+  def start(): Unit = {
     server.start()
 
-    WorkerServer.logger.info(
-      "Server started, listening on " + WorkerServer.port
+    logger.debug(
+      s"WorkerServer listening on port $port with inputDirectories: ${inputDirectories
+          .mkString(", ")} and outputDirectory: $outputDirectory"
     )
 
     sys.addShutdownHook {
-      System.err.println(
-        "*** shutting down gRPC server since JVM is shutting down"
-      )
+      logger.error("*** shutting down gRPC server since JVM is shutting down")
       self.stop()
-      System.err.println("*** server shut down")
+      logger.error("*** server shut down")
     }
   }
 
-  private def stop(): Unit = {
+  def stop(): Unit = {
     if (server != null) {
       server.shutdown()
     }
   }
 
-  private def blockUntilShutdown(): Unit = {
+  def blockUntilShutdown(): Unit = {
     if (server != null) {
       server.awaitTermination()
     }
@@ -65,15 +58,17 @@ class WorkerServer(executionContext: ExecutionContext) { self =>
       val promise = Promise[SampleReply]
 
       Future {
-        try {
-          val sortedBlock = Block.fromPath(Path("data/block"), 10, 90).sort()
-          val sampledKeys = sortedBlock
-            .sample()
-            .map(key => ByteString.copyFrom(key.underlying))
-            .toList
-          val reply = SampleReply(sampledKeys)
+        logger.debug(s"Sample request: $request")
 
-          promise.success(reply)
+        try {
+          val sampledKeys = inputDirectories
+            .map(_.toDirectory)
+            .flatMap(_.list)
+            .map(f => Block.fromPath(f.path))
+            .flatMap(_.sample(request.numberOfKeys))
+            .map(key => ByteString.copyFrom(key.underlying))
+
+          promise.success(SampleReply(sampledKeys))
         } catch {
           case e: Exception =>
             println(e)

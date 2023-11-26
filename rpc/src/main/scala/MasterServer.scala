@@ -11,22 +11,15 @@ import scala.collection.mutable.WrappedArray
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-
 import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
+import org.apache.logging.log4j.scala.Logging
+
 object MasterServer {
-  private val logger = Logger.getLogger(classOf[MasterServer].getName)
-
-  def main(args: Array[String]): Unit = {
-    val server = new MasterServer(ExecutionContext.global)
-    server.start()
-    server.blockUntilShutdown()
-  }
-
   private val port = 50051
 }
 
-class MasterServer(executionContext: ExecutionContext) { self =>
+class MasterServer(executionContext: ExecutionContext) extends Logging { self =>
   private[this] val server: Server = ServerBuilder
     .forPort(MasterServer.port)
     .addService(MasterGrpc.bindService(new MasterImpl, executionContext))
@@ -45,16 +38,16 @@ class MasterServer(executionContext: ExecutionContext) { self =>
   private def start(): Unit = {
     server.start()
 
-    MasterServer.logger.info(
-      "Server started, listening on " + MasterServer.port
+    logger.info(
+      s"MasterServer listening on port $port"
     )
 
     sys.addShutdownHook {
-      System.err.println(
+      logger.error(
         "*** shutting down gRPC server since JVM is shutting down"
       )
       self.stop()
-      System.err.println("*** server shut down")
+      logger.error("*** server shut down")
     }
   }
 
@@ -78,6 +71,8 @@ class MasterServer(executionContext: ExecutionContext) { self =>
       val promise = Promise[RegisterReply]
 
       Future {
+        logger.debug(s"Register request: $request")
+
         val workerMetadata =
           WorkerMetadata(request.worker.get.host, request.worker.get.port, None)
         addWorkerInfo(workerMetadata)
