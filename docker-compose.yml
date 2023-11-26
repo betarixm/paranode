@@ -1,0 +1,14 @@
+services:
+  master:
+    build:
+      context: .
+      dockerfile: docker/master/Dockerfile
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+      args:
+        - MASTER_HOST=master
+        - MASTER_PORT=50051
+    depends_on:
+      - master
