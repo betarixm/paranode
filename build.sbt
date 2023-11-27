@@ -18,7 +18,10 @@ lazy val commonSettings = Seq(
     "org.scalactic" %% "scalactic" % "3.2.17",
     "org.scalatest" %% "scalatest" % "3.2.17" % "test",
     "org.scalatest" %% "scalatest-flatspec" % "3.2.17" % "test",
-    "io.reactivex.rxjava3" % "rxjava" % "3.0.4"
+    "io.grpc" % "grpc-netty" % scalapb.compiler.Version.grpcJavaVersion,
+    "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion,
+    "org.apache.logging.log4j" %% "log4j-api-scala" % "13.0.0",
+    "org.apache.logging.log4j" % "log4j-core" % "2.22.0" % Runtime
   )
 )
 
@@ -42,10 +45,6 @@ lazy val rpc = (project in file("rpc"))
   .settings(
     commonSettings,
     idePackagePrefix := Some("kr.ac.postech.paranode.rpc"),
-    libraryDependencies ++= Seq(
-      "io.grpc" % "grpc-netty" % scalapb.compiler.Version.grpcJavaVersion,
-      "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
-    ),
     Compile / PB.targets := Seq(
       scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
     )

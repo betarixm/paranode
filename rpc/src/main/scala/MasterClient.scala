@@ -6,10 +6,11 @@ import kr.ac.postech.paranode.core.WorkerMetadata
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
+import scala.concurrent.Future
 
 import common.Node
 import master.MasterGrpc.MasterStub
-import master.{MasterGrpc, RegisterRequest}
+import master.{MasterGrpc, RegisterReply, RegisterRequest}
 
 object MasterClient {
   def apply(host: String, port: Int): MasterClient = {
@@ -41,10 +42,9 @@ class MasterClient private (
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
   }
 
-  /** Say hello to server. */
   def register(
       workerMetadata: WorkerMetadata
-  ): Unit = {
+  ): Future[RegisterReply] = {
     val request = RegisterRequest(
       Some(Node(workerMetadata.host, workerMetadata.port))
     )

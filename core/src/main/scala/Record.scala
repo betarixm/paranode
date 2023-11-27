@@ -1,6 +1,8 @@
 package kr.ac.postech.paranode.core
 
-object Record {
+import org.apache.logging.log4j.scala.Logging
+
+object Record extends Logging {
   def fromString(string: String, keyLength: Int = 10): Record =
     Record.fromBytes(string.getBytes(), keyLength)
 
@@ -14,27 +16,40 @@ object Record {
       keyLength: Int = 10,
       valueLength: Int = 90
   ): LazyList[Record] = {
-    val recordLength = keyLength + valueLength
-    val (head, tail) = bytes.splitAt(recordLength)
+    if (bytes.isEmpty) {
+      LazyList.empty
+    } else {
+      val recordLength = keyLength + valueLength
+      val (head, tail) = bytes.splitAt(recordLength)
 
-    Record.fromBytes(head.toArray, keyLength) #:: Record
-      .fromBytesToRecords(
-        tail,
-        keyLength,
-        valueLength
-      )
+      Record.fromBytes(head.toArray, keyLength) #:: Record
+        .fromBytesToRecords(
+          tail,
+          keyLength,
+          valueLength
+        )
+    }
   }
 
-  def sampleWithInterval(
+  def sample(
       records: LazyList[Record],
-      interval: Int = 10
-  ): LazyList[Key] = {
-    if (records.isEmpty)
-      LazyList.empty[Key]
-    else {
-      val (current, rest) = records.splitAt(interval)
-      val head = current.head.key
-      head #:: sampleWithInterval(rest, interval)
+      number: Int = 64
+  ): LazyList[Key] = records.take(number).map(_.key)
+
+  def merged(
+      listOfRecords: List[LazyList[Record]]
+  ): LazyList[Record] = {
+    if (listOfRecords.isEmpty) {
+      LazyList.empty
+    } else {
+      val sortedListOfRecords =
+        listOfRecords.sorted(Ordering.by((_: LazyList[Record]).head.key))
+
+      sortedListOfRecords.head.head #:: merged(
+        (sortedListOfRecords.head.tail :: sortedListOfRecords.tail).filter(
+          _.nonEmpty
+        )
+      )
     }
   }
 }

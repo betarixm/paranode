@@ -1,0 +1,7 @@
+.bsp
+.idea
+docs
+**/.bloop
+target
+**/target
+**/Dockerfile

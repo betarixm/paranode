@@ -1,12 +1,19 @@
 package kr.ac.postech.paranode.core
 
+import org.apache.logging.log4j.scala.Logging
+
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import scala.io.Source
 import scala.reflect.io.Path
 
-object Block {
+object Block extends Logging {
+
+  implicit class Blocks(blocks: List[Block]) {
+    def merged: Block = new Block(Record.merged(blocks.map(_.records)))
+  }
+
   def fromBytes(
       bytes: LazyList[Byte],
       keyLength: Int = 10,
@@ -28,8 +35,11 @@ object Block {
       path: Path,
       keyLength: Int = 10,
       valueLength: Int = 90
-  ): Block =
+  ): Block = {
+    logger.info(s"[Block] Reading block from $path")
+
     Block.fromSource(Source.fromURI(path.toURI), keyLength, valueLength)
+  }
 
 }
 
@@ -57,10 +67,10 @@ class Block(val records: LazyList[Record]) extends AnyVal {
   def partition(keyRanges: List[KeyRange]): List[Partition] =
     keyRanges.map(partition)
 
-  def sort(): Block =
+  def sorted: Block =
     new Block(records.sortBy(_.key))
 
-  def sample(): LazyList[Key] =
-    Record.sampleWithInterval(records)
+  def sample(number: Int = 64): LazyList[Key] =
+    Record.sample(records, number)
 
 }
