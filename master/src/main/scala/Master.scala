@@ -32,7 +32,7 @@ object Master extends Logging {
     val masterHost = InetAddress.getLocalHost.getHostAddress
     val masterPort = sys.env.getOrElse("MASTER_PORT", "50051").toInt
 
-    logger.debug(
+    logger.info(
       "[Master] Arguments: \n" +
         s"masterHost: $masterHost\n" +
         s"masterPort: $masterPort\n" +
@@ -47,7 +47,7 @@ object Master extends Logging {
     println(masterHost + ":" + masterPort)
 
     while (server.registeredWorkers.size < masterArguments.numberOfWorkers) {
-      logger.debug(s"${server.registeredWorkers}")
+      logger.info(s"${server.registeredWorkers}")
       Thread.sleep(1000)
     }
 
@@ -59,48 +59,51 @@ object Master extends Logging {
       WorkerClient(worker.host, worker.port)
     }
 
-    implicit val requestExecutionContext: ExecutionContextExecutor = scala.concurrent.ExecutionContext.fromExecutor(
-      java.util.concurrent.Executors.newFixedThreadPool(workerInfo.size)
-    )
+    implicit val requestExecutionContext: ExecutionContextExecutor =
+      scala.concurrent.ExecutionContext.fromExecutor(
+        java.util.concurrent.Executors.newFixedThreadPool(workerInfo.size)
+      )
+
+    logger.info(s"[Master] Clients: $clients")
+
+    logger.info(s"[Master] Sample Requested")
 
     val sampledKeys = clients
       .sample(64)
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
-    logger.debug(s"[Master] Sampled keys: $sampledKeys")
+    logger.info(s"[Master] Sampled")
 
     val sortedSampledKeys = sampledKeys.sorted
 
-    logger.debug(s"[Master] Sorted Sampled keys: $sortedSampledKeys")
-
     val workers = workersWithKeyRange(sortedSampledKeys, workerInfo)
 
-    logger.debug(s"[Master] Key ranges with worker: $workers")
+    logger.info(s"[Master] Key ranges with worker: $workers")
 
-    logger.debug("[Master] Sort started")
+    logger.info("[Master] Sort started")
 
     clients.sort()
 
-    logger.debug("[Master] Sort finished")
+    logger.info("[Master] Sort finished")
 
-    logger.debug("[Master] Partition started")
+    logger.info("[Master] Partition started")
 
     clients.partition(workers)
 
-    logger.debug("[Master] Partition finished")
+    logger.info("[Master] Partition finished")
 
-    logger.debug("[Master] Exchange started")
+    logger.info("[Master] Exchange started")
 
     clients.exchange(workers)
 
-    logger.debug("[Master] Exchange finished")
+    logger.info("[Master] Exchange finished")
 
-    logger.debug("[Master] Merge started")
+    logger.info("[Master] Merge started")
 
     clients.merge()
 
-    logger.debug("[Master] Merge finished")
+    logger.info("[Master] Merge finished")
 
     server.blockUntilShutdown()
   }

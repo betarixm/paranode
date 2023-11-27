@@ -27,7 +27,7 @@ class WorkerServer(
   def start(): Unit = {
     server.start()
 
-    logger.debug(
+    logger.info(
       "[WorkerServer] \n" +
         s"port: $port\n" +
         s"inputDirectories: ${inputDirectories.mkString(", ")}\n" +

@@ -20,7 +20,7 @@ class MasterService(
     val promise = Promise[RegisterReply]
 
     Future {
-      logger.debug(s"[MasterServer] Register ($request)")
+      logger.info(s"[MasterServer] Register ($request)")
 
       val worker: WorkerMetadata = request.worker.get
 

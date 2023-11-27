@@ -31,7 +31,7 @@ class MasterServer(executionContext: ExecutionContext, port: Int = 50051)
   def start(): Unit = {
     server.start()
 
-    logger.debug(
+    logger.info(
       "[MasterServer] \n" +
         s"port: $port\n"
     )

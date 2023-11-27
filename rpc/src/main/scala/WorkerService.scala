@@ -47,7 +47,7 @@ class WorkerService(
     val promise = Promise[SampleReply]
 
     Future {
-      logger.debug(s"[WorkerServer] Sample ($request)")
+      logger.info(s"[WorkerServer] Sample ($request)")
 
       val sampledKeys = inputFiles
         .map(f => Block.fromPath(f.path))
@@ -64,7 +64,7 @@ class WorkerService(
     val promise = Promise[SortReply]
 
     Future {
-      logger.debug(s"[WorkerServer] Sort ($request)")
+      logger.info(s"[WorkerServer] Sort ($request)")
 
       inputFiles
         .foreach(path => {
@@ -72,11 +72,11 @@ class WorkerService(
 
           val sortedBlock = block.sorted
 
-          logger.debug(s"[WorkerServer] Writing sorted block to $path")
+          logger.info(s"[WorkerServer] Writing sorted block to $path")
 
           sortedBlock.writeTo(path)
 
-          logger.debug(s"[WorkerServer] Wrote sorted block to $path")
+          logger.info(s"[WorkerServer] Wrote sorted block to $path")
         })
 
       promise.success(new SortReply())
@@ -91,7 +91,7 @@ class WorkerService(
     val promise = Promise[PartitionReply]
 
     Future {
-      logger.debug(s"[WorkerServer] Partition ($request)")
+      logger.info(s"[WorkerServer] Partition ($request)")
 
       val workers: Seq[WorkerMetadata] = request.workers
 
@@ -106,19 +106,19 @@ class WorkerService(
                 s"$path.${keyRange.from.hex}-${keyRange.to.hex}"
               )
 
-              logger.debug(
+              logger.info(
                 s"[WorkerServer] Writing partition to $partitionPath"
               )
 
               partition.writeTo(partitionPath)
 
-              logger.debug(
+              logger.info(
                 s"[WorkerServer] Wrote partition to $partitionPath"
               )
 
               if (path.exists && path.isFile) {
                 val result = path.delete()
-                logger.debug(s"[WorkerServer] Deleted $path: $result")
+                logger.info(s"[WorkerServer] Deleted $path: $result")
               }
             })
 
@@ -134,7 +134,7 @@ class WorkerService(
     val promise = Promise[ExchangeReply]
 
     Future {
-      logger.debug(s"[WorkerServer] Exchange ($request)")
+      logger.info(s"[WorkerServer] Exchange ($request)")
 
       val workers: Seq[WorkerMetadata] = request.workers
 
@@ -143,7 +143,7 @@ class WorkerService(
         val targetWorkers = workers
           .filter(_.keyRange.get.includes(block.records.head.key))
 
-        logger.debug(s"[WorkerServer] Sending $block to $targetWorkers")
+        logger.info(s"[WorkerServer] Sending $block to $targetWorkers")
 
         Await.result(
           Future.sequence(
@@ -167,17 +167,17 @@ class WorkerService(
     val promise = Promise[SaveBlockReply]
 
     Future {
-      logger.debug(s"[WorkerServer] SaveBlock ($request)")
+      logger.info(s"[WorkerServer] SaveBlock ($request)")
 
       val block: Block = request.block
 
       val path = outputDirectory / UUID.randomUUID().toString
 
-      logger.debug(s"[WorkerServer] Writing block to $path")
+      logger.info(s"[WorkerServer] Writing block to $path")
 
       block.writeTo(path)
 
-      logger.debug(s"[WorkerServer] Wrote block to $path")
+      logger.info(s"[WorkerServer] Wrote block to $path")
 
       promise.success(new SaveBlockReply())
     }(executionContext)
@@ -189,12 +189,12 @@ class WorkerService(
     val promise = Promise[MergeReply]
 
     Future {
-      logger.debug(s"[WorkerServer] Merge ($request)")
+      logger.info(s"[WorkerServer] Merge ($request)")
       val targetFiles = outputFiles
 
       val blocks = targetFiles.map(path => Block.fromPath(path))
 
-      logger.debug("[WorkerServer] Merging blocks")
+      logger.info("[WorkerServer] Merging blocks")
 
       val mergedBlock = blocks.merged
 
@@ -203,12 +203,12 @@ class WorkerService(
       targetFiles.foreach(file => {
         val result = file.delete()
 
-        logger.debug(
+        logger.info(
           s"[WorkerServer] Deleted $file: $result"
         )
       })
 
-      logger.debug(
+      logger.info(
         s"[WorkerServer] Merged blocks: $results"
       )
 

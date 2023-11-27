@@ -8,7 +8,7 @@ RUN mkdir -p /app
 
 WORKDIR /app
 
-COPY build.sbt ./
+COPY build.sbt log4j2.properties ./
 COPY core/build.sbt ./core/
 COPY master/build.sbt ./master/
 COPY rpc/build.sbt ./rpc/

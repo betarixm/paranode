@@ -45,10 +45,6 @@ object Record extends Logging {
       val sortedListOfRecords =
         listOfRecords.sorted(Ordering.by((_: LazyList[Record]).head.key))
 
-      logger.debug(
-        s"[Record] Sorted list of records: ${sortedListOfRecords.map(_.head.key.hex).mkString(", ")}"
-      )
-
       sortedListOfRecords.head.head #:: merged(
         (sortedListOfRecords.head.tail :: sortedListOfRecords.tail).filter(
           _.nonEmpty

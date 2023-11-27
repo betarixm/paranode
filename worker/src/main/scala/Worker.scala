@@ -18,7 +18,7 @@ object Worker extends Logging {
     val workerPort = Using(new ServerSocket(0))(_.getLocalPort).get
     val workerMetadata = WorkerMetadata(workerHost, workerPort, None)
 
-    logger.debug(
+    logger.info(
       "[Worker] Arguments: \n" +
         s"workerHost: $workerHost\n" +
         s"workerPort: $workerPort\n" +

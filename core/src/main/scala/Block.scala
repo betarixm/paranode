@@ -36,7 +36,7 @@ object Block extends Logging {
       keyLength: Int = 10,
       valueLength: Int = 90
   ): Block = {
-    logger.debug(s"[Block] Reading block from $path")
+    logger.info(s"[Block] Reading block from $path")
 
     Block.fromSource(Source.fromURI(path.toURI), keyLength, valueLength)
   }
