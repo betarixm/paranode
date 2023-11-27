@@ -13,19 +13,25 @@ import scala.concurrent.ExecutionContextExecutor
 object Master extends Logging {
   private def workersWithKeyRange(
       keys: List[Key],
-      workers: List[WorkerMetadata]
-  ): List[WorkerMetadata] =
-    keys
-      .sliding(
-        keys.size / workers.size,
-        keys.size / workers.size
+      workers: List[WorkerMetadata],
+      min: Key,
+      max: Key
+  ): List[WorkerMetadata] = {
+    val keysWithLowerBound = keys :+ min
+
+    val startKeys = keysWithLowerBound.sorted
+      .grouped(
+        (keysWithLowerBound.size.toDouble / workers.size.ceil).ceil.toInt
       )
       .toList
-      .map(keys => KeyRange.tupled(keys.head, keys.last))
-      .zip(workers)
-      .map { case (keyRange, worker) =>
-        worker.copy(keyRange = Some(keyRange))
-      }
+      .map(_.head)
+
+    val pairs = startKeys.zip(startKeys.tail.map(_.prior) :+ max)
+
+    workers.zip(pairs).map { case (worker, (min, max)) =>
+      worker.copy(keyRange = Some(KeyRange(min, max)))
+    }
+  }
 
   def main(args: Array[String]): Unit = {
     val masterArguments = new MasterArguments(args)
@@ -73,11 +79,10 @@ object Master extends Logging {
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
-    logger.info("[Master] Sampled")
+    logger.info(s"[Master] Sampled $sampledKeys")
 
-    val sortedSampledKeys = sampledKeys.sorted
-
-    val workers = workersWithKeyRange(sortedSampledKeys, workerInfo)
+    val workers =
+      workersWithKeyRange(sampledKeys, workerInfo, Key.min(), Key.max())
 
     logger.info(s"[Master] Key ranges with worker: $workers")
 

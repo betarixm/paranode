@@ -47,7 +47,7 @@ class Block(val records: LazyList[Record]) extends AnyVal {
 
   def writeTo(path: Path): File = {
     val file = File(path)
-    val writer = file.bufferedWriter()
+    val writer = file.bufferedOutput()
 
     try {
       toChars.foreach(writer.write(_))
@@ -65,7 +65,7 @@ class Block(val records: LazyList[Record]) extends AnyVal {
       .zipWithIndex
       .map({ case (records, index) =>
         val file = File(directory / s"partition.$index")
-        val writer = file.bufferedWriter()
+        val writer = file.bufferedOutput()
 
         try {
           records.foreach(_.toChars.foreach(writer.write(_)))

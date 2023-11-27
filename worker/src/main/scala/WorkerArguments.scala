@@ -8,14 +8,32 @@ class WorkerArguments(args: Array[String]) {
 
   def masterPort: Int = args(0).split(":")(1).toInt
 
-  def inputDirectories: Array[Directory] =
-    args
+  def inputDirectories: Array[Directory] = {
+    val directories = args
       .slice(inputDirectoriesIndex, outputDirectoryIndex - 1)
       .map(Path.string2path)
       .map(_.toDirectory)
 
-  def outputDirectory: Directory =
-    Path.string2path(args(outputDirectoryIndex)).toDirectory
+    assert(
+      directories.forall(directory =>
+        directory.exists && directory.isDirectory
+      ),
+      "Input directories must exist."
+    )
+
+    directories
+  }
+
+  def outputDirectory: Directory = {
+    val directory = Path.string2path(args(outputDirectoryIndex)).toDirectory
+
+    assert(
+      directory.exists && directory.isDirectory,
+      "Output directory must exist."
+    )
+
+    directory
+  }
 
   private def inputDirectoriesIndex = args.indexOf("-I") + 1
 
