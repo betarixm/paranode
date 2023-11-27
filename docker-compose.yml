@@ -5,14 +5,30 @@ services:
       dockerfile: docker/master/Dockerfile
       args:
         - NUMBER_OF_WORKERS=2
-  worker:
+  worker1:
     build:
       context: .
-      dockerfile: docker/worker/Dockerfile
+      dockerfile: docker/worker1/Dockerfile
       args:
         - MASTER_HOST=master
         - MASTER_PORT=50051
-    deploy:
-      replicas: 2
+    depends_on:
+      - master
+  worker2:
+    build:
+      context: .
+      dockerfile: docker/worker2/Dockerfile
+      args:
+        - MASTER_HOST=master
+        - MASTER_PORT=50051
+    depends_on:
+      - master
+  worker3:
+    build:
+      context: .
+      dockerfile: docker/worker3/Dockerfile
+      args:
+        - MASTER_HOST=master
+        - MASTER_PORT=50051
     depends_on:
       - master
