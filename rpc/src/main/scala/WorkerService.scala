@@ -48,14 +48,20 @@ class WorkerService(
     val promise = Promise[SampleReply]
 
     Future {
-      logger.info(s"[WorkerServer] Sample ($request)")
+      try {
+        logger.info(s"[WorkerServer] Sample ($request)")
 
-      val sampledKeys = inputFiles
-        .map(f => Block.fromPath(f.path))
-        .flatMap(_.sample(request.numberOfKeys))
-        .map(key => ByteString.copyFrom(key.underlying))
+        val sampledKeys = inputFiles
+          .map(f => Block.fromPath(f.path))
+          .flatMap(_.sample(request.numberOfKeys))
+          .map(key => ByteString.copyFrom(key.underlying))
 
-      promise.success(SampleReply(sampledKeys))
+        promise.success(SampleReply(sampledKeys))
+      } catch {
+        case e: Exception =>
+          logger.error(s"[WorkerServer] Sample ($request)\n$e", e)
+          promise.failure(e)
+      }
     }(executionContext)
 
     promise.future
@@ -78,19 +84,25 @@ class WorkerService(
     }
 
     Future {
-      logger.info(s"[WorkerServer] Sort ($request)")
+      try {
+        logger.info(s"[WorkerServer] Sort ($request)")
 
-      Await.result(
-        Future.traverse(inputFiles.toList)(sorted)(
-          GenericBuildFrom[File, File],
-          executionContext
-        ),
-        scala.concurrent.duration.Duration.Inf
-      )
+        Await.result(
+          Future.traverse(inputFiles.toList)(sorted)(
+            GenericBuildFrom[File, File],
+            executionContext
+          ),
+          scala.concurrent.duration.Duration.Inf
+        )
 
-      logger.info("[WorkerServer] Sorted")
+        logger.info("[WorkerServer] Sorted")
 
-      promise.success(new SortReply())
+        promise.success(new SortReply())
+      } catch {
+        case e: Exception =>
+          logger.error(s"[WorkerServer] Sort ($request)\n$e", e)
+          promise.failure(e)
+      }
     }(executionContext)
 
     promise.future
@@ -138,19 +150,25 @@ class WorkerService(
     }
 
     Future {
-      logger.info(s"[WorkerServer] Partition ($request)")
+      try {
+        logger.info(s"[WorkerServer] Partition ($request)")
 
-      Await.result(
-        Future.traverse(inputFiles.toList)(partition)(
-          GenericBuildFrom[File, Seq[File]],
-          executionContext
-        ),
-        scala.concurrent.duration.Duration.Inf
-      )
+        Await.result(
+          Future.traverse(inputFiles.toList)(partition)(
+            GenericBuildFrom[File, Seq[File]],
+            executionContext
+          ),
+          scala.concurrent.duration.Duration.Inf
+        )
 
-      logger.info("[WorkerServer] Partitioned")
+        logger.info("[WorkerServer] Partitioned")
 
-      promise.success(new PartitionReply())
+        promise.success(new PartitionReply())
+      } catch {
+        case e: Exception =>
+          logger.error(s"[WorkerServer] Partition ($request)\n$e", e)
+          promise.failure(e)
+      }
     }(executionContext)
 
     promise.future
@@ -175,29 +193,35 @@ class WorkerService(
     val workers: Seq[WorkerMetadata] = request.workers
 
     Future {
-      logger.info(s"[WorkerServer] Exchange ($request)")
+      try {
+        logger.info(s"[WorkerServer] Exchange ($request)")
 
-      inputFiles.foreach(path => {
-        val block = Block.fromPath(path)
+        inputFiles.foreach(path => {
+          val block = Block.fromPath(path)
 
-        val targetWorkers = workers
-          .filter(_.keyRange.get.includes(block.records.head.key))
-          .toList
+          val targetWorkers = workers
+            .filter(_.keyRange.get.includes(block.records.head.key))
+            .toList
 
-        logger.info(s"[WorkerServer] Sending $block to $targetWorkers")
+          logger.info(s"[WorkerServer] Sending $block to $targetWorkers")
 
-        Await.result(
-          Future.traverse(targetWorkers)(sendBlock(block))(
-            GenericBuildFrom[WorkerMetadata, SaveBlockReply],
-            executionContext
-          ),
-          scala.concurrent.duration.Duration.Inf
-        )
-      })
+          Await.result(
+            Future.traverse(targetWorkers)(sendBlock(block))(
+              GenericBuildFrom[WorkerMetadata, SaveBlockReply],
+              executionContext
+            ),
+            scala.concurrent.duration.Duration.Inf
+          )
+        })
 
-      logger.info("[WorkerServer] Sent blocks")
+        logger.info("[WorkerServer] Sent blocks")
 
-      promise.success(new ExchangeReply())
+        promise.success(new ExchangeReply())
+      } catch {
+        case e: Exception =>
+          logger.error(s"[WorkerServer] Exchange ($request)\n$e", e)
+          promise.failure(e)
+      }
     }(executionContext)
 
     promise.future
@@ -209,19 +233,25 @@ class WorkerService(
     val promise = Promise[SaveBlockReply]
 
     Future {
-      logger.info(s"[WorkerServer] SaveBlock ($request)")
+      try {
+        logger.info(s"[WorkerServer] SaveBlock ($request)")
 
-      val block: Block = request.block
+        val block: Block = request.block
 
-      val path = outputDirectory / UUID.randomUUID().toString
+        val path = outputDirectory / UUID.randomUUID().toString
 
-      logger.info(s"[WorkerServer] Writing block to $path")
+        logger.info(s"[WorkerServer] Writing block to $path")
 
-      block.writeTo(path)
+        block.writeTo(path)
 
-      logger.info(s"[WorkerServer] Wrote block to $path")
+        logger.info(s"[WorkerServer] Wrote block to $path")
 
-      promise.success(new SaveBlockReply())
+        promise.success(new SaveBlockReply())
+      } catch {
+        case e: Exception =>
+          logger.error(s"[WorkerServer] SaveBlock ($request)\n$e", e)
+          promise.failure(e)
+      }
     }(executionContext)
 
     promise.future
@@ -231,36 +261,42 @@ class WorkerService(
     val promise = Promise[MergeReply]
 
     Future {
-      logger.info(s"[WorkerServer] Merge ($request)")
-      val targetFiles = outputFiles
+      try {
+        logger.info(s"[WorkerServer] Merge ($request)")
+        val targetFiles = outputFiles
 
-      val blocks = targetFiles.map(path => Block.fromPath(path))
+        val blocks = targetFiles.map(path => Block.fromPath(path))
 
-      logger.info("[WorkerServer] Merging blocks")
+        logger.info("[WorkerServer] Merging blocks")
 
-      val mergedBlock = blocks.merged
+        val mergedBlock = blocks.merged
 
-      logger.info("[WorkerServer] Merged blocks")
+        logger.info("[WorkerServer] Merged blocks")
 
-      logger.info("[WorkerServer] Writing merged block")
+        logger.info("[WorkerServer] Writing merged block")
 
-      val results = mergedBlock.writeToDirectory(outputDirectory)
+        val results = mergedBlock.writeToDirectory(outputDirectory)
 
-      logger.info("[WorkerServer] Wrote merged block")
+        logger.info("[WorkerServer] Wrote merged block")
 
-      targetFiles.foreach(file => {
-        val result = file.delete()
+        targetFiles.foreach(file => {
+          val result = file.delete()
+
+          logger.info(
+            s"[WorkerServer] Deleted $file: $result"
+          )
+        })
 
         logger.info(
-          s"[WorkerServer] Deleted $file: $result"
+          s"[WorkerServer] Merged blocks: $results"
         )
-      })
 
-      logger.info(
-        s"[WorkerServer] Merged blocks: $results"
-      )
-
-      promise.success(new MergeReply())
+        promise.success(new MergeReply())
+      } catch {
+        case e: Exception =>
+          logger.error(s"[WorkerServer] Merge ($request)\n$e", e)
+          promise.failure(e)
+      }
     }(executionContext)
 
     promise.future
