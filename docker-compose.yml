@@ -5,29 +5,32 @@ services:
       dockerfile: docker/master/Dockerfile
       args:
         - NUMBER_OF_WORKERS=2
-  worker1:
+  worker-0:
     build:
       context: .
-      dockerfile: docker/worker1/Dockerfile
+      dockerfile: docker/worker/Dockerfile
       args:
+        - WORKER_ID=0
         - MASTER_HOST=master
         - MASTER_PORT=50051
     depends_on:
       - master
-  worker2:
+  worker-1:
     build:
       context: .
-      dockerfile: docker/worker2/Dockerfile
+      dockerfile: docker/worker/Dockerfile
       args:
+        - WORKER_ID=0
         - MASTER_HOST=master
         - MASTER_PORT=50051
     depends_on:
       - master
-  worker3:
+  worker-2:
     build:
       context: .
-      dockerfile: docker/worker3/Dockerfile
+      dockerfile: docker/worker/Dockerfile
       args:
+        - WORKER_ID=0
         - MASTER_HOST=master
         - MASTER_PORT=50051
     depends_on:
