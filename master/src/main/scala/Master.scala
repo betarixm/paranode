@@ -8,6 +8,7 @@ import kr.ac.postech.paranode.rpc.WorkerClient
 import org.apache.logging.log4j.scala.Logging
 
 import java.net._
+import scala.concurrent.ExecutionContextExecutor
 
 object Master extends Logging {
   private def workersWithKeyRange(
@@ -57,6 +58,10 @@ object Master extends Logging {
     val clients = workerInfo.map { worker =>
       WorkerClient(worker.host, worker.port)
     }
+
+    implicit val requestExecutionContext: ExecutionContextExecutor = scala.concurrent.ExecutionContext.fromExecutor(
+      java.util.concurrent.Executors.newFixedThreadPool(workerInfo.size)
+    )
 
     val sampledKeys = clients
       .sample(64)

@@ -6,48 +6,64 @@ import kr.ac.postech.paranode.core.WorkerMetadata
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
+import scala.concurrent.{Await, ExecutionContext, Future}
 import worker._
 import worker.WorkerGrpc.WorkerStub
 import Implicit._
 
+import kr.ac.postech.paranode.utils.GenericBuildFrom
+
 object WorkerClient {
 
   implicit class WorkerClients(val clients: List[WorkerClient]) {
-    def sample(numberOfKeys: Int): List[SampleReply] =
+    def sample(
+        numberOfKeys: Int
+    )(implicit executionContext: ExecutionContext): List[SampleReply] =
       Await.result(
-        Future.sequence(clients.map(_.sample(numberOfKeys))),
+        Future.traverse(clients)(_.sample(numberOfKeys))(
+          GenericBuildFrom[WorkerClient, SampleReply],
+          executionContext
+        ),
         scala.concurrent.duration.Duration.Inf
       )
 
-    def sort(): List[SortReply] =
+    def sort()(implicit executionContext: ExecutionContext): List[SortReply] =
       Await.result(
-        Future.sequence(clients.map(_.sort())),
+        Future.traverse(clients)(_.sort())(
+          GenericBuildFrom[WorkerClient, SortReply],
+          executionContext
+        ),
         scala.concurrent.duration.Duration.Inf
       )
 
     def partition(
         keyRanges: List[WorkerMetadata]
-    ): List[PartitionReply] =
+    )(implicit executionContext: ExecutionContext): List[PartitionReply] =
       Await.result(
-        Future.sequence(clients.map(_.partition(keyRanges))),
+        Future.traverse(clients)(_.partition(keyRanges))(
+          GenericBuildFrom[WorkerClient, PartitionReply],
+          executionContext
+        ),
         scala.concurrent.duration.Duration.Inf
       )
 
     def exchange(
         keyRanges: List[WorkerMetadata]
-    ): List[ExchangeReply] =
+    )(implicit executionContext: ExecutionContext): List[ExchangeReply] =
       Await.result(
-        Future.sequence(clients.map(_.exchange(keyRanges))),
+        Future.traverse(clients)(_.exchange(keyRanges))(
+          GenericBuildFrom[WorkerClient, ExchangeReply],
+          executionContext
+        ),
         scala.concurrent.duration.Duration.Inf
       )
 
-    def merge(): List[MergeReply] =
+    def merge()(implicit executionContext: ExecutionContext): List[MergeReply] =
       Await.result(
-        Future.sequence(clients.map(_.merge())),
+        Future.traverse(clients)(_.merge())(
+          GenericBuildFrom[WorkerClient, MergeReply],
+          executionContext
+        ),
         scala.concurrent.duration.Duration.Inf
       )
   }
