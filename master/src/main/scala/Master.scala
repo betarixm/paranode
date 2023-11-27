@@ -66,14 +66,14 @@ object Master extends Logging {
 
     logger.info(s"[Master] Clients: $clients")
 
-    logger.info(s"[Master] Sample Requested")
+    logger.info("[Master] Sample Requested")
 
     val sampledKeys = clients
       .sample(64)
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
-    logger.info(s"[Master] Sampled")
+    logger.info("[Master] Sampled")
 
     val sortedSampledKeys = sampledKeys.sorted
 

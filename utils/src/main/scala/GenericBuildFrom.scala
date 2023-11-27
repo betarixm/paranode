@@ -1,6 +1,7 @@
 package kr.ac.postech.paranode.utils
 
-import scala.collection.{BuildFrom, mutable}
+import scala.collection.BuildFrom
+import scala.collection.mutable
 
 object GenericBuildFrom {
   def apply[A, B]: BuildFrom[List[A], B, List[B]] =

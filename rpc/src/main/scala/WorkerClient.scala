@@ -3,15 +3,17 @@ import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import kr.ac.postech.paranode.core.Block
 import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.utils.GenericBuildFrom
 
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import worker._
 import worker.WorkerGrpc.WorkerStub
 import Implicit._
-
-import kr.ac.postech.paranode.utils.GenericBuildFrom
 
 object WorkerClient {
 
