@@ -240,7 +240,13 @@ class WorkerService(
 
       val mergedBlock = blocks.merged
 
-      val results = mergedBlock.writeTo(outputDirectory / "result")
+      logger.info("[WorkerServer] Merged blocks")
+
+      logger.info("[WorkerServer] Writing merged block")
+
+      val results = mergedBlock.writeToDirectory(outputDirectory)
+
+      logger.info("[WorkerServer] Wrote merged block")
 
       targetFiles.foreach(file => {
         val result = file.delete()
