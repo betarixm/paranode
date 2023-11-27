@@ -2,10 +2,9 @@ package kr.ac.postech.paranode.core
 
 import org.apache.logging.log4j.scala.Logging
 
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileOutputStream
 import scala.io.Source
+import scala.reflect.io.Directory
+import scala.reflect.io.File
 import scala.reflect.io.Path
 
 object Block extends Logging {
@@ -47,8 +46,8 @@ class Block(val records: LazyList[Record]) extends AnyVal {
   def toChars: LazyList[Char] = records.flatMap(_.toChars)
 
   def writeTo(path: Path): File = {
-    val file = new File(path.toString)
-    val writer = new BufferedOutputStream(new FileOutputStream(file))
+    val file = File(path)
+    val writer = file.bufferedWriter()
 
     try {
       toChars.foreach(writer.write(_))
@@ -56,6 +55,25 @@ class Block(val records: LazyList[Record]) extends AnyVal {
       // TODO: Handle exceptions
     } finally writer.close()
   }
+
+  def writeToDirectory(
+      directory: Directory,
+      size: Int = 320000
+  ): List[File] =
+    records
+      .grouped(size)
+      .zipWithIndex
+      .map({ case (records, index) =>
+        val file = File(directory / s"partition.$index")
+        val writer = file.bufferedWriter()
+
+        try {
+          records.foreach(_.toChars.foreach(writer.write(_)))
+          file
+        } finally writer.close()
+
+      })
+      .toList
 
   def filterByKeyRange(keyRange: KeyRange): Block = new Block(
     records.filter(keyRange.includes)

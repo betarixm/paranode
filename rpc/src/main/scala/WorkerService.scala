@@ -3,12 +3,13 @@ package kr.ac.postech.paranode.rpc
 import com.google.protobuf.ByteString
 import kr.ac.postech.paranode.core.Block
 import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.utils.GenericBuildFrom
 import org.apache.logging.log4j.scala.Logging
 
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.reflect.io.Directory
@@ -63,21 +64,31 @@ class WorkerService(
   override def sort(request: SortRequest): Future[SortReply] = {
     val promise = Promise[SortReply]
 
+    implicit val executionContext: ExecutionContextExecutor =
+      scala.concurrent.ExecutionContext.fromExecutor(
+        java.util.concurrent.Executors
+          .newCachedThreadPool()
+      )
+
+    def sorted(path: Path) = Future {
+      logger.info(s"[WorkerServer] Sorting block $path")
+      val result = Block.fromPath(path).sorted.writeTo(path)
+      logger.info(s"[WorkerServer] Wrote sorted block $path")
+      result
+    }
+
     Future {
       logger.info(s"[WorkerServer] Sort ($request)")
 
-      inputFiles
-        .foreach(path => {
-          val block = Block.fromPath(path)
+      Await.result(
+        Future.traverse(inputFiles.toList)(sorted)(
+          GenericBuildFrom[File, File],
+          executionContext
+        ),
+        scala.concurrent.duration.Duration.Inf
+      )
 
-          val sortedBlock = block.sorted
-
-          logger.info(s"[WorkerServer] Writing sorted block to $path")
-
-          sortedBlock.writeTo(path)
-
-          logger.info(s"[WorkerServer] Wrote sorted block to $path")
-        })
+      logger.info("[WorkerServer] Sorted")
 
       promise.success(new SortReply())
     }(executionContext)
@@ -90,39 +101,54 @@ class WorkerService(
   ): Future[PartitionReply] = {
     val promise = Promise[PartitionReply]
 
+    implicit val executionContext: ExecutionContextExecutor =
+      scala.concurrent.ExecutionContext.fromExecutor(
+        java.util.concurrent.Executors
+          .newCachedThreadPool()
+      )
+
+    val workers: Seq[WorkerMetadata] = request.workers
+
+    def partition(path: Path) = Future {
+      val block = Block.fromPath(path)
+
+      logger.info("[WorkerServer] Partitioning block")
+
+      val partitions = workers
+        .map(_.keyRange.get)
+        .map(keyRange => {
+          block.partition(keyRange)
+        })
+
+      logger.info("[WorkerServer] Partitioned block")
+
+      logger.info("[WorkerServer] Writing partitions")
+
+      val result = partitions.map({ case (keyRange, partition) =>
+        partition.writeTo(
+          Path(
+            s"$path.${keyRange.from.hex}-${keyRange.to.hex}"
+          )
+        )
+      })
+
+      logger.info("[WorkerServer] Wrote partitions")
+
+      result
+    }
+
     Future {
       logger.info(s"[WorkerServer] Partition ($request)")
 
-      val workers: Seq[WorkerMetadata] = request.workers
+      Await.result(
+        Future.traverse(inputFiles.toList)(partition)(
+          GenericBuildFrom[File, Seq[File]],
+          executionContext
+        ),
+        scala.concurrent.duration.Duration.Inf
+      )
 
-      inputFiles
-        .map(path => {
-          val block = Block.fromPath(path)
-          workers
-            .map(_.keyRange.get)
-            .map(block.partition)
-            .map({ case (keyRange, partition) =>
-              val partitionPath = Path(
-                s"$path.${keyRange.from.hex}-${keyRange.to.hex}"
-              )
-
-              logger.info(
-                s"[WorkerServer] Writing partition to $partitionPath"
-              )
-
-              partition.writeTo(partitionPath)
-
-              logger.info(
-                s"[WorkerServer] Wrote partition to $partitionPath"
-              )
-
-              if (path.exists && path.isFile) {
-                val result = path.delete()
-                logger.info(s"[WorkerServer] Deleted $path: $result")
-              }
-            })
-
-        })
+      logger.info("[WorkerServer] Partitioned")
 
       promise.success(new PartitionReply())
     }(executionContext)
@@ -133,27 +159,43 @@ class WorkerService(
   override def exchange(request: ExchangeRequest): Future[ExchangeReply] = {
     val promise = Promise[ExchangeReply]
 
+    implicit val executionContext: ExecutionContextExecutor =
+      scala.concurrent.ExecutionContext.fromExecutor(
+        java.util.concurrent.Executors
+          .newCachedThreadPool()
+      )
+
+    def sendBlock(block: Block)(worker: WorkerMetadata) = Future {
+      Await.result(
+        WorkerClient(worker.host, worker.port).saveBlock(block),
+        scala.concurrent.duration.Duration.Inf
+      )
+    }
+
+    val workers: Seq[WorkerMetadata] = request.workers
+
     Future {
       logger.info(s"[WorkerServer] Exchange ($request)")
 
-      val workers: Seq[WorkerMetadata] = request.workers
-
       inputFiles.foreach(path => {
         val block = Block.fromPath(path)
+
         val targetWorkers = workers
           .filter(_.keyRange.get.includes(block.records.head.key))
+          .toList
 
         logger.info(s"[WorkerServer] Sending $block to $targetWorkers")
 
         Await.result(
-          Future.sequence(
-            targetWorkers
-              .map(worker => WorkerClient(worker.host, worker.port))
-              .map(_.saveBlock(block))
+          Future.traverse(targetWorkers)(sendBlock(block))(
+            GenericBuildFrom[WorkerMetadata, SaveBlockReply],
+            executionContext
           ),
           scala.concurrent.duration.Duration.Inf
         )
       })
+
+      logger.info("[WorkerServer] Sent blocks")
 
       promise.success(new ExchangeReply())
     }(executionContext)
@@ -198,7 +240,13 @@ class WorkerService(
 
       val mergedBlock = blocks.merged
 
-      val results = mergedBlock.writeTo(outputDirectory / "result")
+      logger.info("[WorkerServer] Merged blocks")
+
+      logger.info("[WorkerServer] Writing merged block")
+
+      val results = mergedBlock.writeToDirectory(outputDirectory)
+
+      logger.info("[WorkerServer] Wrote merged block")
 
       targetFiles.foreach(file => {
         val result = file.delete()
