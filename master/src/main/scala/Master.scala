@@ -70,7 +70,7 @@ object Master extends Logging {
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
-    logger.info(s"[Master] Sampled $sampledKeys")
+    logger.info("[Master] Sampled")
 
     val workers = sampledKeys
       .rangesBy(registeredWorkers.size, Key.min(), Key.max())
