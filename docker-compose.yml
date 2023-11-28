@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker/master/Dockerfile
       args:
-        - NUMBER_OF_WORKERS=2
+        - NUMBER_OF_WORKERS=3
   worker-0:
     build:
       context: .
