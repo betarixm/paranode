@@ -133,8 +133,8 @@ class WorkerService(
       logger.info("[WorkerServer] Partitioned block")
 
       path.delete()
-      
-      logger.info(s"[WorkerServer] Delete input file: ${path}")
+
+      logger.info(s"[WorkerServer] Delete input file ($path)")
 
       logger.info("[WorkerServer] Writing partitions")
 
