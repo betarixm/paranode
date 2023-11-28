@@ -2,19 +2,17 @@ package kr.ac.postech.paranode.rpc
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import kr.ac.postech.paranode.core.WorkerMetadata
-import kr.ac.postech.paranode.utils.MutableState
 import org.apache.logging.log4j.scala.Logging
 
 import scala.concurrent.ExecutionContext
 
 import master.MasterGrpc
 
-class MasterServer(executionContext: ExecutionContext, port: Int = 50051)
-    extends Logging {
-
-  private[this] val workers: MutableState[List[WorkerMetadata]] =
-    new MutableState(List.empty)
+class MasterServer(
+    executionContext: ExecutionContext,
+    service: MasterGrpc.Master,
+    port: Int = 50051
+) extends Logging {
 
   val server: Server =
     ServerBuilder
@@ -22,7 +20,7 @@ class MasterServer(executionContext: ExecutionContext, port: Int = 50051)
       .addService(
         MasterGrpc
           .bindService(
-            new MasterService(executionContext, workers),
+            service,
             executionContext
           )
       )
@@ -57,5 +55,4 @@ class MasterServer(executionContext: ExecutionContext, port: Int = 50051)
     }
   }
 
-  def registeredWorkers: List[WorkerMetadata] = workers.get
 }
