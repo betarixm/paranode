@@ -106,7 +106,9 @@ object Master extends Logging {
 
     logger.info("[Master] Merge finished")
 
-    server.blockUntilShutdown()
+    clients.foreach(_.shutdown())
+
+    server.stop()
   }
 
 }

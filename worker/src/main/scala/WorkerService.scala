@@ -208,7 +208,7 @@ class WorkerService(
             scala.concurrent.duration.Duration.Inf
           )
 
-          clients.foreach(_.shutdownNow())
+          clients.foreach(_.shutdown())
         })
 
         logger.info("[WorkerServer] Sent blocks")
