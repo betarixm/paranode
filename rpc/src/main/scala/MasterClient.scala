@@ -42,6 +42,10 @@ class MasterClient private (
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
   }
 
+  def shutdownNow(): Unit = {
+    channel.shutdownNow()
+  }
+
   def register(
       workerMetadata: WorkerMetadata
   ): Future[RegisterReply] = {

@@ -181,13 +181,6 @@ class WorkerService(
           .newCachedThreadPool()
       )
 
-    def sendBlock(block: Block)(worker: WorkerMetadata) = Future {
-      Await.result(
-        WorkerClient(worker.host, worker.port).saveBlock(block),
-        scala.concurrent.duration.Duration.Inf
-      )
-    }
-
     val workers: Seq[WorkerMetadata] = request.workers
 
     Future {
@@ -203,13 +196,19 @@ class WorkerService(
 
           logger.info(s"[WorkerServer] Sending $block to $targetWorkers")
 
+          val clients = targetWorkers.map(worker => {
+            WorkerClient(worker.host, worker.port)
+          })
+
           Await.result(
-            Future.traverse(targetWorkers)(sendBlock(block))(
-              GenericBuildFrom[WorkerMetadata, SaveBlockReply],
+            Future.traverse(clients)(_.saveBlock(block))(
+              GenericBuildFrom[WorkerClient, SaveBlockReply],
               executionContext
             ),
             scala.concurrent.duration.Duration.Inf
           )
+
+          clients.foreach(_.shutdownNow())
         })
 
         logger.info("[WorkerServer] Sent blocks")
