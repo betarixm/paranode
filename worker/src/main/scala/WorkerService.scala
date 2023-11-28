@@ -1,37 +1,19 @@
-package kr.ac.postech.paranode.rpc
+package kr.ac.postech.paranode.worker
 
 import com.google.protobuf.ByteString
 import kr.ac.postech.paranode.core.Block
 import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.rpc.Implicit._
+import kr.ac.postech.paranode.rpc.WorkerClient
+import kr.ac.postech.paranode.rpc.worker._
 import kr.ac.postech.paranode.utils.GenericBuildFrom
 import org.apache.logging.log4j.scala.Logging
 
 import java.util.UUID
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import scala.concurrent._
 import scala.reflect.io.Directory
 import scala.reflect.io.File
 import scala.reflect.io.Path
-
-import worker.{
-  ExchangeReply,
-  ExchangeRequest,
-  MergeReply,
-  MergeRequest,
-  PartitionReply,
-  PartitionRequest,
-  SampleReply,
-  SampleRequest,
-  SaveBlockReply,
-  SaveBlockRequest,
-  SortReply,
-  SortRequest,
-  WorkerGrpc
-}
-import Implicit._
 
 class WorkerService(
     executionContext: ExecutionContext,

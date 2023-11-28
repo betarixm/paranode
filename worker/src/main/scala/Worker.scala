@@ -7,7 +7,9 @@ import org.apache.logging.log4j.scala.Logging
 
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.util.concurrent.Executors
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.util.Using
 
 object Worker extends Logging {
@@ -28,11 +30,21 @@ object Worker extends Logging {
         s"outputDirectory: ${workerArguments.outputDirectory}\n"
     )
 
-    val server = new WorkerServer(
-      scala.concurrent.ExecutionContext.global,
-      workerPort,
+    val workerExecutionContext: ExecutionContext =
+      ExecutionContext.fromExecutor(
+        Executors.newCachedThreadPool()
+      )
+
+    val workerService = new WorkerService(
+      workerExecutionContext,
       workerArguments.inputDirectories,
       workerArguments.outputDirectory
+    )
+
+    val server = new WorkerServer(
+      workerExecutionContext,
+      workerService,
+      workerPort
     )
 
     val client =

@@ -4,21 +4,19 @@ import io.grpc.ServerBuilder
 import org.apache.logging.log4j.scala.Logging
 
 import scala.concurrent.ExecutionContext
-import scala.reflect.io.Directory
 
 import worker._
 
 class WorkerServer(
     executionContext: ExecutionContext,
-    port: Int,
-    inputDirectories: Array[Directory],
-    outputDirectory: Directory
+    service: WorkerGrpc.Worker,
+    port: Int
 ) extends Logging { self =>
   private[this] val server: Server = ServerBuilder
     .forPort(port)
     .addService(
       WorkerGrpc.bindService(
-        new WorkerService(executionContext, inputDirectories, outputDirectory),
+        service,
         executionContext
       )
     )
@@ -29,9 +27,7 @@ class WorkerServer(
 
     logger.info(
       "[WorkerServer] \n" +
-        s"port: $port\n" +
-        s"inputDirectories: ${inputDirectories.mkString(", ")}\n" +
-        s"outputDirectory: $outputDirectory\n"
+        s"port: $port\n"
     )
 
     sys.addShutdownHook {
