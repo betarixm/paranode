@@ -187,29 +187,33 @@ class WorkerService(
       try {
         logger.info(s"[WorkerServer] Exchange ($request)")
 
+        val clients = workers.map(worker => {
+          WorkerClient(worker.host, worker.port)
+        })
+
+        val workersWithClients = workers.zip(clients).toList
+
         inputFiles.foreach(path => {
           val block = Block.fromPath(path)
 
-          val targetWorkers = workers
-            .filter(_.keyRange.get.includes(block.records.head.key))
-            .toList
+          val targetClients = workersWithClients
+            .filter(
+              _._1.keyRange.get.includes(block.records.head.key)
+            )
+            .map(_._2)
 
-          logger.info(s"[WorkerServer] Sending $block to $targetWorkers")
-
-          val clients = targetWorkers.map(worker => {
-            WorkerClient(worker.host, worker.port)
-          })
+          logger.info(s"[WorkerServer] Sending $block to $targetClients")
 
           Await.result(
-            Future.traverse(clients)(_.saveBlock(block))(
+            Future.traverse(targetClients)(_.saveBlock(block))(
               GenericBuildFrom[WorkerClient, SaveBlockReply],
               executionContext
             ),
             scala.concurrent.duration.Duration.Inf
           )
-
-          clients.foreach(_.shutdown())
         })
+
+        clients.foreach(_.shutdown())
 
         logger.info("[WorkerServer] Sent blocks")
 
