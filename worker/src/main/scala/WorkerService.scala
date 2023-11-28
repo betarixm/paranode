@@ -144,6 +144,10 @@ class WorkerService(
 
       logger.info("[WorkerServer] Wrote partitions")
 
+      path.delete()
+
+      logger.info(s"[WorkerServer] Delete input file ($path)")
+
       result
     }
 
