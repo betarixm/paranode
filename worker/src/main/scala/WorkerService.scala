@@ -1,37 +1,35 @@
-package kr.ac.postech.paranode.rpc
+package kr.ac.postech.paranode.worker
 
 import com.google.protobuf.ByteString
+import io.grpc.ServerServiceDefinition
 import kr.ac.postech.paranode.core.Block
 import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.rpc.Implicit._
+import kr.ac.postech.paranode.rpc.WorkerClient
+import kr.ac.postech.paranode.rpc.worker._
 import kr.ac.postech.paranode.utils.GenericBuildFrom
 import org.apache.logging.log4j.scala.Logging
 
 import java.util.UUID
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import scala.concurrent._
 import scala.reflect.io.Directory
 import scala.reflect.io.File
 import scala.reflect.io.Path
 
-import worker.{
-  ExchangeReply,
-  ExchangeRequest,
-  MergeReply,
-  MergeRequest,
-  PartitionReply,
-  PartitionRequest,
-  SampleReply,
-  SampleRequest,
-  SaveBlockReply,
-  SaveBlockRequest,
-  SortReply,
-  SortRequest,
-  WorkerGrpc
+object WorkerService {
+  def apply(
+      inputDirectories: Array[Directory],
+      outputDirectory: Directory
+  )(implicit executionContext: ExecutionContext): ServerServiceDefinition =
+    WorkerGrpc.bindService(
+      new WorkerService(
+        executionContext,
+        inputDirectories,
+        outputDirectory
+      ),
+      executionContext
+    )
 }
-import Implicit._
 
 class WorkerService(
     executionContext: ExecutionContext,
@@ -183,36 +181,39 @@ class WorkerService(
           .newCachedThreadPool()
       )
 
-    def sendBlock(block: Block)(worker: WorkerMetadata) = Future {
-      Await.result(
-        WorkerClient(worker.host, worker.port).saveBlock(block),
-        scala.concurrent.duration.Duration.Inf
-      )
-    }
-
     val workers: Seq[WorkerMetadata] = request.workers
 
     Future {
       try {
         logger.info(s"[WorkerServer] Exchange ($request)")
 
+        val clients = workers.map(worker => {
+          WorkerClient(worker.host, worker.port)
+        })
+
+        val workersWithClients = workers.zip(clients).toList
+
         inputFiles.foreach(path => {
           val block = Block.fromPath(path)
 
-          val targetWorkers = workers
-            .filter(_.keyRange.get.includes(block.records.head.key))
-            .toList
+          val targetClients = workersWithClients
+            .filter(
+              _._1.keyRange.get.includes(block.records.head.key)
+            )
+            .map(_._2)
 
-          logger.info(s"[WorkerServer] Sending $block to $targetWorkers")
+          logger.info(s"[WorkerServer] Sending $block to $targetClients")
 
           Await.result(
-            Future.traverse(targetWorkers)(sendBlock(block))(
-              GenericBuildFrom[WorkerMetadata, SaveBlockReply],
+            Future.traverse(targetClients)(_.saveBlock(block))(
+              GenericBuildFrom[WorkerClient, SaveBlockReply],
               executionContext
             ),
             scala.concurrent.duration.Duration.Inf
           )
         })
+
+        clients.foreach(_.shutdown())
 
         logger.info("[WorkerServer] Sent blocks")
 

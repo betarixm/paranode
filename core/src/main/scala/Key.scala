@@ -3,6 +3,27 @@ package kr.ac.postech.paranode.core
 import com.google.protobuf.ByteString
 
 object Key {
+  implicit class Keys(private val keys: Iterable[Key]) extends AnyVal {
+    def rangesBy(numberOfRanges: Int, min: Key, max: Key): List[KeyRange] = {
+      val keysWithLowerBound = keys.toList :+ min
+
+      val startKeys = keysWithLowerBound.sorted
+        .grouped(
+          (keysWithLowerBound.size.toDouble / numberOfRanges.ceil).ceil.toInt
+        )
+        .toList
+        .map(_.head)
+
+      val endKeys = startKeys.tail.map(_.prior) :+ max
+
+      val result = startKeys.zip(endKeys).map(KeyRange.tupled)
+
+      assert(result.size == numberOfRanges)
+
+      result
+    }
+  }
+
   def fromString(string: String): Key = new Key(string.getBytes())
 
   def fromByteString(byteString: ByteString): Key = new Key(

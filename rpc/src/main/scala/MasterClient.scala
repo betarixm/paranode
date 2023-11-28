@@ -20,16 +20,6 @@ object MasterClient {
     new MasterClient(channel, stub)
   }
 
-  def main(args: Array[String]): Unit = {
-    val client = MasterClient("localhost", 50051)
-    try {
-      val workerMetadata = WorkerMetadata("1.2.3.4", 56, None)
-      client.register(workerMetadata)
-    } finally {
-      client.shutdown()
-    }
-  }
-
 }
 
 class MasterClient private (
@@ -40,6 +30,10 @@ class MasterClient private (
 
   def shutdown(): Unit = {
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
+  }
+
+  def shutdownNow(): Unit = {
+    channel.shutdownNow()
   }
 
   def register(

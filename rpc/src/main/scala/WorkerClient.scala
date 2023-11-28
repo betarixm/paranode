@@ -91,6 +91,10 @@ class WorkerClient private (
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
   }
 
+  def shutdownNow(): Unit = {
+    channel.shutdownNow()
+  }
+
   def sample(numberOfKeys: Int): Future[SampleReply] = {
     val request = SampleRequest(numberOfKeys)
     val response = stub.sample(request)

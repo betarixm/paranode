@@ -1,38 +1,18 @@
 package kr.ac.postech.paranode.master
 
 import kr.ac.postech.paranode.core.Key
-import kr.ac.postech.paranode.core.KeyRange
 import kr.ac.postech.paranode.core.WorkerMetadata
-import kr.ac.postech.paranode.rpc.MasterServer
+import kr.ac.postech.paranode.rpc.GrpcServer
 import kr.ac.postech.paranode.rpc.WorkerClient
+import kr.ac.postech.paranode.utils.MutableState
 import org.apache.logging.log4j.scala.Logging
 
 import java.net._
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
 
 object Master extends Logging {
-  private def workersWithKeyRange(
-      keys: List[Key],
-      workers: List[WorkerMetadata],
-      min: Key,
-      max: Key
-  ): List[WorkerMetadata] = {
-    val keysWithLowerBound = keys :+ min
-
-    val startKeys = keysWithLowerBound.sorted
-      .grouped(
-        (keysWithLowerBound.size.toDouble / workers.size.ceil).ceil.toInt
-      )
-      .toList
-      .map(_.head)
-
-    val pairs = startKeys.zip(startKeys.tail.map(_.prior) :+ max)
-
-    workers.zip(pairs).map { case (worker, (min, max)) =>
-      worker.copy(keyRange = Some(KeyRange(min, max)))
-    }
-  }
-
   def main(args: Array[String]): Unit = {
     val masterArguments = new MasterArguments(args)
     val masterHost = InetAddress.getLocalHost.getHostAddress
@@ -45,29 +25,40 @@ object Master extends Logging {
         s"numberOfWorkers: ${masterArguments.numberOfWorkers}\n"
     )
 
+    val serviceExecutionContext: ExecutionContextExecutor =
+      ExecutionContext.fromExecutor(
+        Executors.newCachedThreadPool()
+      )
+
+    val mutableWorkers = new MutableState[List[WorkerMetadata]](Nil)
+
     val server =
-      new MasterServer(scala.concurrent.ExecutionContext.global, masterPort)
+      new GrpcServer(
+        MasterService(mutableWorkers)(serviceExecutionContext),
+        masterPort
+      )
 
     server.start()
 
     println(masterHost + ":" + masterPort)
 
-    while (server.registeredWorkers.size < masterArguments.numberOfWorkers) {
-      logger.info(s"${server.registeredWorkers}")
+    while (mutableWorkers.get.size < masterArguments.numberOfWorkers) {
+      logger.info(s"${mutableWorkers.get}")
       Thread.sleep(1000)
     }
 
-    val workerInfo: List[WorkerMetadata] = server.registeredWorkers
+    val registeredWorkers: List[WorkerMetadata] = mutableWorkers.get
 
-    println(workerInfo.map(_.host).mkString(", "))
+    println(registeredWorkers.map(_.host).mkString(", "))
 
-    val clients = workerInfo.map { worker =>
+    val clients = registeredWorkers.map { worker =>
       WorkerClient(worker.host, worker.port)
     }
 
-    implicit val requestExecutionContext: ExecutionContextExecutor =
+    val requestExecutionContext: ExecutionContextExecutor =
       scala.concurrent.ExecutionContext.fromExecutor(
-        java.util.concurrent.Executors.newFixedThreadPool(workerInfo.size)
+        java.util.concurrent.Executors
+          .newFixedThreadPool(registeredWorkers.size)
       )
 
     logger.info(s"[Master] Clients: $clients")
@@ -75,42 +66,49 @@ object Master extends Logging {
     logger.info("[Master] Sample Requested")
 
     val sampledKeys = clients
-      .sample(64)
+      .sample(64)(requestExecutionContext)
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
-    logger.info(s"[Master] Sampled $sampledKeys")
+    logger.info("[Master] Sampled")
 
-    val workers =
-      workersWithKeyRange(sampledKeys, workerInfo, Key.min(), Key.max())
+    val workers = sampledKeys
+      .rangesBy(registeredWorkers.size, Key.min(), Key.max())
+      .map(Some(_))
+      .zip(registeredWorkers)
+      .map { case (keyRange, worker) =>
+        worker.copy(keyRange = keyRange)
+      }
 
     logger.info(s"[Master] Key ranges with worker: $workers")
 
     logger.info("[Master] Sort started")
 
-    clients.sort()
+    clients.sort()(requestExecutionContext)
 
     logger.info("[Master] Sort finished")
 
     logger.info("[Master] Partition started")
 
-    clients.partition(workers)
+    clients.partition(workers)(requestExecutionContext)
 
     logger.info("[Master] Partition finished")
 
     logger.info("[Master] Exchange started")
 
-    clients.exchange(workers)
+    clients.exchange(workers)(requestExecutionContext)
 
     logger.info("[Master] Exchange finished")
 
     logger.info("[Master] Merge started")
 
-    clients.merge()
+    clients.merge()(requestExecutionContext)
 
     logger.info("[Master] Merge finished")
 
-    server.blockUntilShutdown()
+    clients.foreach(_.shutdown())
+
+    server.stop()
   }
 
 }

@@ -25,7 +25,7 @@ lazy val commonSettings = Seq(
   )
 )
 
-lazy val root = (project in file("."))
+lazy val paranode = (project in file("."))
   .aggregate(core, utils, master, worker, rpc)
 
 lazy val utils = (project in file("utils"))
