@@ -1,8 +1,8 @@
 package kr.ac.postech.paranode.worker
 
 import kr.ac.postech.paranode.core.WorkerMetadata
+import kr.ac.postech.paranode.rpc.GrpcServer
 import kr.ac.postech.paranode.rpc.MasterClient
-import kr.ac.postech.paranode.rpc.WorkerServer
 import org.apache.logging.log4j.scala.Logging
 
 import java.net.InetAddress
@@ -30,20 +30,16 @@ object Worker extends Logging {
         s"outputDirectory: ${workerArguments.outputDirectory}\n"
     )
 
-    val workerExecutionContext: ExecutionContext =
+    val serviceExecutionContext: ExecutionContext =
       ExecutionContext.fromExecutor(
         Executors.newCachedThreadPool()
       )
 
-    val workerService = new WorkerService(
-      workerExecutionContext,
-      workerArguments.inputDirectories,
-      workerArguments.outputDirectory
-    )
-
-    val server = new WorkerServer(
-      workerExecutionContext,
-      workerService,
+    val server = new GrpcServer(
+      WorkerService(
+        workerArguments.inputDirectories,
+        workerArguments.outputDirectory
+      )(serviceExecutionContext),
       workerPort
     )
 

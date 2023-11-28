@@ -1,6 +1,7 @@
 package kr.ac.postech.paranode.worker
 
 import com.google.protobuf.ByteString
+import io.grpc.ServerServiceDefinition
 import kr.ac.postech.paranode.core.Block
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.Implicit._
@@ -14,6 +15,21 @@ import scala.concurrent._
 import scala.reflect.io.Directory
 import scala.reflect.io.File
 import scala.reflect.io.Path
+
+object WorkerService {
+  def apply(
+      inputDirectories: Array[Directory],
+      outputDirectory: Directory
+  )(implicit executionContext: ExecutionContext): ServerServiceDefinition =
+    WorkerGrpc.bindService(
+      new WorkerService(
+        executionContext,
+        inputDirectories,
+        outputDirectory
+      ),
+      executionContext
+    )
+}
 
 class WorkerService(
     executionContext: ExecutionContext,

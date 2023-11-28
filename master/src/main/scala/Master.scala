@@ -2,7 +2,7 @@ package kr.ac.postech.paranode.master
 
 import kr.ac.postech.paranode.core.Key
 import kr.ac.postech.paranode.core.WorkerMetadata
-import kr.ac.postech.paranode.rpc.MasterServer
+import kr.ac.postech.paranode.rpc.GrpcServer
 import kr.ac.postech.paranode.rpc.WorkerClient
 import kr.ac.postech.paranode.utils.MutableState
 import org.apache.logging.log4j.scala.Logging
@@ -32,10 +32,11 @@ object Master extends Logging {
 
     val mutableWorkers = new MutableState[List[WorkerMetadata]](Nil)
 
-    val service = new MasterService(serviceExecutionContext, mutableWorkers)
-
     val server =
-      new MasterServer(serviceExecutionContext, service, masterPort)
+      new GrpcServer(
+        MasterService(mutableWorkers)(serviceExecutionContext),
+        masterPort
+      )
 
     server.start()
 
@@ -54,7 +55,7 @@ object Master extends Logging {
       WorkerClient(worker.host, worker.port)
     }
 
-    implicit val requestExecutionContext: ExecutionContextExecutor =
+    val requestExecutionContext: ExecutionContextExecutor =
       scala.concurrent.ExecutionContext.fromExecutor(
         java.util.concurrent.Executors
           .newFixedThreadPool(registeredWorkers.size)
@@ -65,7 +66,7 @@ object Master extends Logging {
     logger.info("[Master] Sample Requested")
 
     val sampledKeys = clients
-      .sample(64)
+      .sample(64)(requestExecutionContext)
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
@@ -83,25 +84,25 @@ object Master extends Logging {
 
     logger.info("[Master] Sort started")
 
-    clients.sort()
+    clients.sort()(requestExecutionContext)
 
     logger.info("[Master] Sort finished")
 
     logger.info("[Master] Partition started")
 
-    clients.partition(workers)
+    clients.partition(workers)(requestExecutionContext)
 
     logger.info("[Master] Partition finished")
 
     logger.info("[Master] Exchange started")
 
-    clients.exchange(workers)
+    clients.exchange(workers)(requestExecutionContext)
 
     logger.info("[Master] Exchange finished")
 
     logger.info("[Master] Merge started")
 
-    clients.merge()
+    clients.merge()(requestExecutionContext)
 
     logger.info("[Master] Merge finished")
 
