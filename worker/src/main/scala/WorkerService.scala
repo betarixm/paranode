@@ -200,21 +200,25 @@ class WorkerService(
         inputFiles.foreach(path => {
           val block = Block.fromPath(path)
 
-          val targetClients = workersWithClients
-            .filter(
-              _._1.keyRange.get.includes(block.records.head.key)
+          val blockChunks = block.splitIntoChunks(1000)
+
+          blockChunks.foreach(chunk => {
+            val targetClients = workersWithClients
+              .filter(
+                _._1.keyRange.get.includes(chunk.records.head.key)
+              )
+              .map(_._2)
+
+            logger.info(s"[WorkerServer] Sending $chunk to $targetClients")
+
+            Await.result(
+              Future.traverse(targetClients)(_.saveBlock(chunk))(
+                GenericBuildFrom[WorkerClient, SaveBlockReply],
+                executionContext
+              ),
+              scala.concurrent.duration.Duration.Inf
             )
-            .map(_._2)
-
-          logger.info(s"[WorkerServer] Sending $block to $targetClients")
-
-          Await.result(
-            Future.traverse(targetClients)(_.saveBlock(block))(
-              GenericBuildFrom[WorkerClient, SaveBlockReply],
-              executionContext
-            ),
-            scala.concurrent.duration.Duration.Inf
-          )
+          })
         })
 
         clients.foreach(_.shutdown())

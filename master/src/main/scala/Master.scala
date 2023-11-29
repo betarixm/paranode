@@ -66,7 +66,7 @@ object Master extends Logging {
     logger.info("[Master] Sample Requested")
 
     val sampledKeys = clients
-      .sample(64)(requestExecutionContext)
+      .sample(1024)(requestExecutionContext)
       .flatMap(_.sampledKeys)
       .map(Key.fromByteString)
 
