@@ -91,4 +91,8 @@ class Block(val records: LazyList[Record]) extends AnyVal {
   def sample(number: Int = 64): LazyList[Key] =
     Record.sample(records, number)
 
+  def splitIntoChunks(chunkSize: Int): LazyList[Block] = {
+    records.grouped(chunkSize).map(new Block(_)).to(LazyList)
+  }
+
 }
