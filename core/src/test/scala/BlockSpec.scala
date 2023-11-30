@@ -107,7 +107,7 @@ class BlockSpec extends AnyFlatSpec {
 
     val result = block.writeTo(temporaryFile.getPath)
 
-    val source = Source.fromFile(result)
+    val source = Source.fromFile(result.jfile)
 
     temporaryFile.deleteOnExit()
 
@@ -168,7 +168,7 @@ class BlockSpec extends AnyFlatSpec {
       )
     )
 
-    val sortedBlock = block.sort()
+    val sortedBlock = block.sorted
 
     val expectedBlock =
       new Block(
