@@ -1,18 +1,4 @@
-FROM sbtscala/scala-sbt:eclipse-temurin-jammy-20.0.2_9_1.9.6_2.13.12
-
-ARG WORKER_ID
-
-ARG MASTER_HOST
-ARG MASTER_PORT
-
-ENV MASTER_HOST=${MASTER_HOST}
-ENV MASTER_PORT=${MASTER_PORT}
-
-ENV SBT_OPTS="-Xmx2G -Xss2M"
-
-RUN mkdir -p /app /data /output
-
-COPY docker/worker/data/${WORKER_ID} /data
+FROM sbtscala/scala-sbt:eclipse-temurin-jammy-20.0.2_9_1.9.6_2.13.12 as builder
 
 WORKDIR /app
 
@@ -26,12 +12,26 @@ COPY project/build.properties project/plugins.sbt project/scalapb.sbt ./project/
 
 RUN sbt --batch compile
 
-COPY rpc/src/main/protobuf  ./rpc/src/main/protobuf
-
-RUN sbt --batch compile
-
 COPY . .
 
-RUN sbt --batch compile
+RUN sbt --batch "compile; assembly"
 
-ENTRYPOINT sbt --batch -v "worker/run ${MASTER_HOST}:${MASTER_PORT} -I /data/0 /data/1 -O /output/"
+FROM amazoncorretto:20 as runner
+
+ARG WORKER_ID
+
+ARG MASTER_HOST
+ARG MASTER_PORT
+
+ENV MASTER_HOST=${MASTER_HOST}
+ENV MASTER_PORT=${MASTER_PORT}
+
+RUN mkdir -p /data /output
+
+COPY docker/worker/data/${WORKER_ID} /data
+
+WORKDIR /app
+
+COPY --from=builder /app/worker/target/scala-2.13/worker.jar .
+
+ENTRYPOINT java -jar worker.jar ${MASTER_HOST}:${MASTER_PORT} -I /data/0 /data/1 -O /output/
