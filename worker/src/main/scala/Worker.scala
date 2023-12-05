@@ -9,6 +9,7 @@ import org.apache.logging.log4j.scala.Logging
 import java.util.concurrent.Executors
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.reflect.io.Directory
 
 object Worker extends Logging {
@@ -27,7 +28,7 @@ object Worker extends Logging {
       workerArguments.outputDirectory
     )
 
-    worker.run()
+    worker.run()(ExecutionContext.global)
   }
 
 }
@@ -40,44 +41,45 @@ class Worker(
     inputDirectories: Array[Directory],
     outputDirectory: Directory
 ) extends Logging {
-  def run(): Unit = {
-    logger.info(
-      "[Worker] Arguments: \n" +
-        s"workerHost: $host\n" +
-        s"workerPort: $port\n" +
-        s"masterIp: $masterHost\n" +
-        s"masterPort: $masterPort\n" +
-        s"inputDirectories: ${inputDirectories.mkString(", ")}\n" +
-        s"outputDirectory: $outputDirectory\n"
-    )
-
-    val workerMetadata = WorkerMetadata(host, port, None)
-
-    val serviceExecutionContext: ExecutionContext =
-      ExecutionContext.fromExecutor(
-        Executors.newCachedThreadPool()
+  def run()(implicit executionContext: ExecutionContext): Future[Unit] =
+    Future {
+      logger.info(
+        "[Worker] Arguments: \n" +
+          s"workerHost: $host\n" +
+          s"workerPort: $port\n" +
+          s"masterIp: $masterHost\n" +
+          s"masterPort: $masterPort\n" +
+          s"inputDirectories: ${inputDirectories.mkString(", ")}\n" +
+          s"outputDirectory: $outputDirectory\n"
       )
 
-    val server = new GrpcServer(
-      WorkerService(
-        inputDirectories,
-        outputDirectory
-      )(serviceExecutionContext),
-      port
-    )
+      val workerMetadata = WorkerMetadata(host, port, None)
 
-    val client =
-      MasterClient(masterHost, masterPort)
+      val serviceExecutionContext: ExecutionContext =
+        ExecutionContext.fromExecutor(
+          Executors.newCachedThreadPool()
+        )
 
-    server.start()
+      val server = new GrpcServer(
+        WorkerService(
+          inputDirectories,
+          outputDirectory
+        )(serviceExecutionContext),
+        port
+      )
 
-    Await.result(
-      client.register(workerMetadata),
-      scala.concurrent.duration.Duration.Inf
-    )
+      val client =
+        MasterClient(masterHost, masterPort)
 
-    client.shutdown()
+      server.start()
 
-    server.blockUntilShutdown()
-  }
+      Await.result(
+        client.register(workerMetadata),
+        scala.concurrent.duration.Duration.Inf
+      )
+
+      client.shutdown()
+
+      server.blockUntilShutdown()
+    }
 }
