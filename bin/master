@@ -1,10 +1,10 @@
 #!/bin/sh
 
 SCRIPT_PATH=$(realpath "$0")
-SCRIPTS_DIR=$(dirname "$SCRIPT_PATH")
-PROJECT_DIR=$(dirname "$SCRIPTS_DIR")
+BIN_DIR=$(dirname "$SCRIPT_PATH")
+PROJECT_DIR=$(dirname "$BIN_DIR")
 
-JAR_PATH="$PROJECT_DIR/worker/target/scala-2.13/worker.jar"
+JAR_PATH="$PROJECT_DIR/master/target/scala-2.13/master.jar"
 
 if [ ! -f "$JAR_PATH" ]; then
     echo "Jar not found at $JAR_PATH. Try running 'sbt assembly' first."
