@@ -59,7 +59,7 @@ class SystemSpec extends AnyFlatSpec {
     val outputRecords = Record.fromBytesToRecords(outputBytes)
 
     assert(
-      outputRecords.length == numberOfWorkers * 1000
+      outputRecords.length == numberOfWorkers * 2000
     ) // FIXME: 1000 is hardcoded
     assert(outputRecords.isSorted)
   }
