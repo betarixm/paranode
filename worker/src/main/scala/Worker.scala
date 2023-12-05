@@ -44,6 +44,21 @@ class Worker(
     val inputDirectories: Array[Directory],
     val outputDirectory: Directory
 ) extends Logging {
+  private val workerMetadata = WorkerMetadata(host, port, None)
+
+  private val serviceExecutionContext: ExecutionContext =
+    ExecutionContext.fromExecutor(
+      Executors.newCachedThreadPool()
+    )
+
+  private val server = new GrpcServer(
+    WorkerService(
+      inputDirectories,
+      outputDirectory
+    )(serviceExecutionContext),
+    port
+  )
+
   def run()(implicit executionContext: ExecutionContext): Future[Unit] =
     Future {
       logger.info(
@@ -54,21 +69,6 @@ class Worker(
           s"masterPort: $masterPort\n" +
           s"inputDirectories: ${inputDirectories.mkString(", ")}\n" +
           s"outputDirectory: $outputDirectory\n"
-      )
-
-      val workerMetadata = WorkerMetadata(host, port, None)
-
-      val serviceExecutionContext: ExecutionContext =
-        ExecutionContext.fromExecutor(
-          Executors.newCachedThreadPool()
-        )
-
-      val server = new GrpcServer(
-        WorkerService(
-          inputDirectories,
-          outputDirectory
-        )(serviceExecutionContext),
-        port
       )
 
       val client =
@@ -85,4 +85,8 @@ class Worker(
 
       server.blockUntilShutdown()
     }
+
+  def shutdown(): Unit = {
+    server.stop()
+  }
 }
