@@ -74,3 +74,11 @@ lazy val worker = (project in file("worker"))
   )
   .dependsOn(core)
   .dependsOn(rpc)
+
+lazy val e2e = (project in file("e2e"))
+  .settings(
+    commonSettings,
+    idePackagePrefix := Some("kr.ac.postech.paranode.e2e")
+  )
+  .dependsOn(master)
+  .dependsOn(worker)
