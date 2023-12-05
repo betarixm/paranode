@@ -15,6 +15,7 @@ import scala.concurrent._
 import scala.reflect.io.Directory
 import scala.reflect.io.File
 import scala.reflect.io.Path
+import scala.util.hashing.MurmurHash3
 
 object WorkerService {
   def apply(
@@ -140,9 +141,9 @@ class WorkerService(
 
       val result = partitions.map({ case (keyRange, partition) =>
         partition.writeTo(
-          Path(
-            s"$path.${keyRange.from.hex}-${keyRange.to.hex}"
-          )
+          path.parent / s"${MurmurHash3
+              .stringHash(path.name)
+              .toHexString}.${keyRange.from.hex}-${keyRange.to.hex}"
         )
       })
 
