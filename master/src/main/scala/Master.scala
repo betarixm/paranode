@@ -4,10 +4,10 @@ import kr.ac.postech.paranode.core.Key
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.GrpcServer
 import kr.ac.postech.paranode.rpc.WorkerClient
+import kr.ac.postech.paranode.utils.Hooks
 import kr.ac.postech.paranode.utils.MutableState
 import org.apache.logging.log4j.scala.Logging
 
-import java.net._
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
@@ -15,14 +15,27 @@ import scala.concurrent.ExecutionContextExecutor
 object Master extends Logging {
   def main(args: Array[String]): Unit = {
     val masterArguments = new MasterArguments(args)
-    val masterHost = InetAddress.getLocalHost.getHostAddress
+    val masterHost = Hooks.useLocalHostAddress
     val masterPort = sys.env.getOrElse("MASTER_PORT", "50051").toInt
 
+    val master = new Master(
+      masterHost,
+      masterPort,
+      masterArguments.numberOfWorkers
+    )
+
+    master.run()
+  }
+
+}
+
+class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
+  def run(): Unit = {
     logger.info(
       "[Master] Arguments: \n" +
-        s"masterHost: $masterHost\n" +
-        s"masterPort: $masterPort\n" +
-        s"numberOfWorkers: ${masterArguments.numberOfWorkers}\n"
+        s"masterHost: $host\n" +
+        s"masterPort: $port\n" +
+        s"numberOfWorkers: ${numberOfWorkers}\n"
     )
 
     val serviceExecutionContext: ExecutionContextExecutor =
@@ -35,14 +48,14 @@ object Master extends Logging {
     val server =
       new GrpcServer(
         MasterService(mutableWorkers)(serviceExecutionContext),
-        masterPort
+        port
       )
 
     server.start()
 
-    println(masterHost + ":" + masterPort)
+    println(host + ":" + port)
 
-    while (mutableWorkers.get.size < masterArguments.numberOfWorkers) {
+    while (mutableWorkers.get.size < numberOfWorkers) {
       logger.info(s"${mutableWorkers.get}")
       Thread.sleep(1000)
     }
@@ -110,5 +123,4 @@ object Master extends Logging {
 
     server.stop()
   }
-
 }
