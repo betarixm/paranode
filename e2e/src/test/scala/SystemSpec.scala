@@ -7,7 +7,6 @@ import kr.ac.postech.paranode.worker.Worker
 import kr.ac.postech.paranode.core.Record
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.io.Source
 import scala.reflect.io.Path
 
 class SystemSpec extends AnyFlatSpec {
@@ -34,6 +33,14 @@ class SystemSpec extends AnyFlatSpec {
         )
       })
 
+    val expectedOutputRecords =
+      Record
+        .fromDirectories(
+          (0 until numberOfWorkers).flatMap(inputDirectories).toList
+        )
+        .sorted
+        .toList
+
     master.run()
 
     master.blockUntilRunning()
@@ -50,18 +57,21 @@ class SystemSpec extends AnyFlatSpec {
 
     master.blockUntilFinished()
 
-    val outputSources = outputDirectoriesInRegisteredOrder
-      .flatMap(_.toDirectory.list)
-      .map(x => Source.fromURI(x.toURI))
-
-    val outputBytes = LazyList.from(outputSources.flatMap(_.map(_.toByte)))
-
-    val outputRecords = Record.fromBytesToRecords(outputBytes)
+    val outputRecords =
+      Record.fromDirectories(outputDirectoriesInRegisteredOrder).toList
 
     assert(
-      outputRecords.length == numberOfWorkers * 2000
-    ) // FIXME: 1000 is hardcoded
-    assert(outputRecords.isSorted)
+      outputRecords is expectedOutputRecords
+    )
+
+  }
+
+  implicit class Records(val records: List[Record]) {
+    def is(that: List[Record]): Boolean = {
+      records.length == that.length && records
+        .zip(that)
+        .forall(records => records._1 is records._2)
+    }
   }
 
   private def inputDirectories(index: Int) = {
@@ -70,20 +80,6 @@ class SystemSpec extends AnyFlatSpec {
     assert(path.exists && path.isDirectory, "Input directories must exist.")
 
     path.toDirectory.list.map(_.toDirectory).toArray
-  }
-
-  implicit class Records(records: LazyList[Record]) {
-    def isSorted: Boolean = records match {
-      case LazyList()  => true
-      case LazyList(_) => true
-      case _ =>
-        records
-          .sliding(2)
-          .forall({ case LazyList(record1, record2) =>
-            record1.key <= record2.key
-          })
-    }
-
   }
 
 }
