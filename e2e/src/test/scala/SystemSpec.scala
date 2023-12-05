@@ -5,11 +5,12 @@ import org.scalatest.flatspec.AnyFlatSpec
 import kr.ac.postech.paranode.utils.Hooks
 import kr.ac.postech.paranode.worker.Worker
 import kr.ac.postech.paranode.core.Record
+import org.apache.logging.log4j.scala.Logging
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.io.Path
 
-class SystemSpec extends AnyFlatSpec {
+class SystemSpec extends AnyFlatSpec with Logging {
   private val masterPort: Int = Hooks.useAvailablePort
 
   "System" should "be working" in {
@@ -59,6 +60,13 @@ class SystemSpec extends AnyFlatSpec {
 
     val outputRecords =
       Record.fromDirectories(outputDirectoriesInRegisteredOrder).toList
+
+    workers.foreach(_.shutdown())
+
+    logger.info(
+      s"[SystemSpec] Expected Output Records: ${expectedOutputRecords.length}"
+    )
+    logger.info(s"[SystemSpec] Output Records: ${outputRecords.length}")
 
     assert(
       outputRecords is expectedOutputRecords
