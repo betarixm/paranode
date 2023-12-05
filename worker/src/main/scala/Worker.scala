@@ -37,12 +37,12 @@ object Worker extends Logging {
 }
 
 class Worker(
-    host: String,
-    port: Int,
-    masterHost: String,
-    masterPort: Int,
-    inputDirectories: Array[Directory],
-    outputDirectory: Directory
+    val host: String,
+    val port: Int,
+    val masterHost: String,
+    val masterPort: Int,
+    val inputDirectories: Array[Directory],
+    val outputDirectory: Directory
 ) extends Logging {
   def run()(implicit executionContext: ExecutionContext): Future[Unit] =
     Future {

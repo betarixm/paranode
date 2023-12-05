@@ -37,8 +37,13 @@ object Master extends Logging {
 }
 
 class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
-  private val state: MutableState[Progress] =
+  private val serverState: MutableState[Progress] =
     new MutableState[Progress](Progress.Idle)
+
+  private val registerState: MutableState[Progress] =
+    new MutableState[Progress](Progress.Idle)
+
+  private val mutableWorkers = new MutableState[List[WorkerMetadata]](Nil)
 
   def run()(implicit executionContext: ExecutionContext): Future[Unit] =
     Future {
@@ -54,8 +59,6 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
           Executors.newCachedThreadPool()
         )
 
-      val mutableWorkers = new MutableState[List[WorkerMetadata]](Nil)
-
       val server =
         new GrpcServer(
           MasterService(mutableWorkers)(serviceExecutionContext),
@@ -66,7 +69,8 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
 
       println(host + ":" + port)
 
-      state.update(_ => Progress.Running)
+      serverState.update(_ => Progress.Running)
+      registerState.update(_ => Progress.Running)
 
       while (mutableWorkers.get.size < numberOfWorkers) {
         logger.info(s"${mutableWorkers.get}")
@@ -74,6 +78,8 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
       }
 
       val registeredWorkers: List[WorkerMetadata] = mutableWorkers.get
+
+      registerState.update(_ => Progress.Finished)
 
       println(registeredWorkers.map(_.host).mkString(", "))
 
@@ -136,7 +142,7 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
 
       server.stop()
 
-      state.update(_ => Progress.Finished)
+      serverState.update(_ => Progress.Finished)
     }
 
   def blockUntilRunning(): Unit = {
@@ -151,7 +157,16 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
     }
   }
 
-  def isRunning: Boolean = state.get == Progress.Running
+  def blockUntilRegistered(): List[WorkerMetadata] = {
+    while (!isRegistered) {
+      Thread.sleep(1000)
+    }
+    mutableWorkers.get
+  }
 
-  def isFinished: Boolean = state.get == Progress.Finished
+  def isRunning: Boolean = serverState.get == Progress.Running
+
+  def isRegistered: Boolean = registerState.get == Progress.Finished
+
+  def isFinished: Boolean = serverState.get == Progress.Finished
 }
