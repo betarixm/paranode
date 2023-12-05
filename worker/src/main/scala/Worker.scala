@@ -28,7 +28,10 @@ object Worker extends Logging {
       workerArguments.outputDirectory
     )
 
-    worker.run()(ExecutionContext.global)
+    Await.result(
+      worker.run()(ExecutionContext.global),
+      scala.concurrent.duration.Duration.Inf
+    )
   }
 
 }

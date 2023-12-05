@@ -11,6 +11,7 @@ import kr.ac.postech.paranode.utils.Progress._
 import org.apache.logging.log4j.scala.Logging
 
 import java.util.concurrent.Executors
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
@@ -27,7 +28,10 @@ object Master extends Logging {
       masterArguments.numberOfWorkers
     )
 
-    master.run()(ExecutionContext.global)
+    Await.result(
+      master.run()(ExecutionContext.global),
+      scala.concurrent.duration.Duration.Inf
+    )
   }
 
 }
