@@ -16,7 +16,7 @@ jobs:
           java-version: 20
           cache: sbt
       - name: Run tests
-        run: sbt -v "test"
+        run: sbt -v "test; e2e / test"
   lint:
     runs-on: ubuntu-latest
     steps:
