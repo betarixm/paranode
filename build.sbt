@@ -8,6 +8,12 @@ ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
+ThisBuild / assembly / assemblyMergeStrategy := {
+  case "module-info.class"                     => MergeStrategy.discard
+  case "META-INF/io.netty.versions.properties" => MergeStrategy.concat
+  case x => (assembly / assemblyMergeStrategy).value(x)
+}
+
 lazy val commonSettings = Seq(
   name := "cs434-project",
   idePackagePrefix := Some("kr.ac.postech.paranode"),
@@ -54,7 +60,8 @@ lazy val rpc = (project in file("rpc"))
 lazy val master = (project in file("master"))
   .settings(
     commonSettings,
-    idePackagePrefix := Some("kr.ac.postech.paranode.master")
+    idePackagePrefix := Some("kr.ac.postech.paranode.master"),
+    assembly / assemblyJarName := "master.jar"
   )
   .dependsOn(core)
   .dependsOn(rpc)
@@ -62,7 +69,16 @@ lazy val master = (project in file("master"))
 lazy val worker = (project in file("worker"))
   .settings(
     commonSettings,
-    idePackagePrefix := Some("kr.ac.postech.paranode.worker")
+    idePackagePrefix := Some("kr.ac.postech.paranode.worker"),
+    assembly / assemblyJarName := "worker.jar"
   )
   .dependsOn(core)
   .dependsOn(rpc)
+
+lazy val e2e = (project in file("e2e"))
+  .settings(
+    commonSettings,
+    idePackagePrefix := Some("kr.ac.postech.paranode.e2e")
+  )
+  .dependsOn(master)
+  .dependsOn(worker)

@@ -2,6 +2,9 @@ package kr.ac.postech.paranode.core
 
 import org.apache.logging.log4j.scala.Logging
 
+import scala.io.Source
+import scala.reflect.io.Directory
+
 object Record extends Logging {
   def fromString(string: String, keyLength: Int = 10): Record =
     Record.fromBytes(string.getBytes(), keyLength)
@@ -29,6 +32,20 @@ object Record extends Logging {
           valueLength
         )
     }
+  }
+
+  def fromDirectories(
+      directories: List[Directory],
+      keyLength: Int = 10,
+      valueLength: Int = 90
+  ): LazyList[Record] = {
+    val sources = directories
+      .flatMap(_.files)
+      .map(file => Source.fromURI(file.toURI))
+
+    val bytes = LazyList.from(sources.flatMap(_.map(_.toByte)))
+
+    Record.fromBytesToRecords(bytes, keyLength, valueLength)
   }
 
   def sample(

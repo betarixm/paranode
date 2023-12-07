@@ -3,59 +3,90 @@ package kr.ac.postech.paranode.worker
 import kr.ac.postech.paranode.core.WorkerMetadata
 import kr.ac.postech.paranode.rpc.GrpcServer
 import kr.ac.postech.paranode.rpc.MasterClient
+import kr.ac.postech.paranode.utils.Hooks
 import org.apache.logging.log4j.scala.Logging
 
-import java.net.InetAddress
-import java.net.ServerSocket
 import java.util.concurrent.Executors
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
-import scala.util.Using
+import scala.concurrent.Future
+import scala.reflect.io.Directory
 
 object Worker extends Logging {
 
   def main(args: Array[String]): Unit = {
     val workerArguments = new WorkerArguments(args)
-    val workerHost = InetAddress.getLocalHost.getHostAddress
-    val workerPort = Using(new ServerSocket(0))(_.getLocalPort).get
-    val workerMetadata = WorkerMetadata(workerHost, workerPort, None)
+    val workerHost = Hooks.useLocalHostAddress
+    val workerPort = Hooks.useAvailablePort
 
-    logger.info(
-      "[Worker] Arguments: \n" +
-        s"workerHost: $workerHost\n" +
-        s"workerPort: $workerPort\n" +
-        s"masterIp: ${workerArguments.masterHost}\n" +
-        s"masterPort: ${workerArguments.masterPort}\n" +
-        s"inputDirectories: ${workerArguments.inputDirectories.mkString(", ")}\n" +
-        s"outputDirectory: ${workerArguments.outputDirectory}\n"
+    val worker = new Worker(
+      workerHost,
+      workerPort,
+      workerArguments.masterHost,
+      workerArguments.masterPort,
+      workerArguments.inputDirectories,
+      workerArguments.outputDirectory
     )
-
-    val serviceExecutionContext: ExecutionContext =
-      ExecutionContext.fromExecutor(
-        Executors.newCachedThreadPool()
-      )
-
-    val server = new GrpcServer(
-      WorkerService(
-        workerArguments.inputDirectories,
-        workerArguments.outputDirectory
-      )(serviceExecutionContext),
-      workerPort
-    )
-
-    val client =
-      MasterClient(workerArguments.masterHost, workerArguments.masterPort)
-
-    server.start()
 
     Await.result(
-      client.register(workerMetadata),
+      worker.run()(ExecutionContext.global),
       scala.concurrent.duration.Duration.Inf
     )
-
-    client.shutdown()
-
-    server.blockUntilShutdown()
   }
 
+}
+
+class Worker(
+    val host: String,
+    val port: Int,
+    val masterHost: String,
+    val masterPort: Int,
+    val inputDirectories: Array[Directory],
+    val outputDirectory: Directory
+) extends Logging {
+  private val workerMetadata = WorkerMetadata(host, port, None)
+
+  private val serviceExecutionContext: ExecutionContext =
+    ExecutionContext.fromExecutor(
+      Executors.newCachedThreadPool()
+    )
+
+  private val server = new GrpcServer(
+    WorkerService(
+      inputDirectories,
+      outputDirectory
+    )(serviceExecutionContext),
+    port
+  )
+
+  def run()(implicit executionContext: ExecutionContext): Future[Unit] =
+    Future {
+      logger.info(
+        "[Worker] Arguments: \n" +
+          s"workerHost: $host\n" +
+          s"workerPort: $port\n" +
+          s"masterIp: $masterHost\n" +
+          s"masterPort: $masterPort\n" +
+          s"inputDirectories: ${inputDirectories.mkString(", ")}\n" +
+          s"outputDirectory: $outputDirectory\n"
+      )
+
+      val client =
+        MasterClient(masterHost, masterPort)
+
+      server.start()
+
+      Await.result(
+        client.register(workerMetadata),
+        scala.concurrent.duration.Duration.Inf
+      )
+
+      client.shutdown()
+
+      server.blockUntilShutdown()
+    }
+
+  def shutdown(): Unit = {
+    server.stop()
+  }
 }
