@@ -33,3 +33,43 @@ jobs:
       - uses: DavidAnson/markdownlint-cli2-action@v13
         with:
           globs: "**/*.md"
+  build:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 20
+          cache: sbt
+      - run: sbt assembly
+      - uses: actions/upload-artifact@v3
+        with:
+          name: master
+          path: master/target/scala-2.13/master.jar
+      - uses: actions/upload-artifact@v3
+        with:
+          name: worker
+          path: worker/target/scala-2.13/worker.jar
+      - name: Release development build
+        if: github.ref == 'refs/heads/develop'
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            master/target/scala-2.13/master.jar
+            worker/target/scala-2.13/worker.jar
+      - name: Release production build
+        if: github.ref == 'refs/heads/main'
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: "latest"
+          title: "Production Build"
+          files: |
+            master/target/scala-2.13/master.jar
+            worker/target/scala-2.13/worker.jar
