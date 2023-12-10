@@ -32,7 +32,6 @@ object Master extends Logging {
       master.run()(ExecutionContext.global),
       scala.concurrent.duration.Duration.Inf
     )
-    System.exit(0)
   }
 
 }
