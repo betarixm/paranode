@@ -28,10 +28,15 @@ object Worker extends Logging {
       workerArguments.outputDirectory
     )
 
-    Await.result(
-      worker.run()(ExecutionContext.global),
-      scala.concurrent.duration.Duration.Inf
-    )
+    try {
+      Await.result(
+        worker.run()(ExecutionContext.global),
+        scala.concurrent.duration.Duration.Inf
+      )
+    } catch {
+      case _: io.grpc.StatusRuntimeException => System.exit(0)
+      case _: Exception                      => System.exit(1)
+    }
   }
 
 }
