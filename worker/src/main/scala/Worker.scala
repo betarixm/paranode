@@ -35,7 +35,7 @@ object Worker extends Logging {
       )
     } catch {
       case _: io.grpc.StatusRuntimeException => System.exit(0)
-      case _: Exception => System.exit(1)
+      case _: Exception                      => System.exit(1)
     }
   }
 
