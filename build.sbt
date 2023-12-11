@@ -1,3 +1,5 @@
+import sbtassembly.AssemblyPlugin.defaultShellScript
+
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "2.13.12"
@@ -13,6 +15,10 @@ ThisBuild / assembly / assemblyMergeStrategy := {
   case "META-INF/io.netty.versions.properties" => MergeStrategy.concat
   case x => (assembly / assemblyMergeStrategy).value(x)
 }
+
+ThisBuild / assemblyPrependShellScript := Some(
+  defaultShellScript
+)
 
 lazy val commonSettings = Seq(
   name := "cs434-project",
@@ -61,7 +67,7 @@ lazy val master = (project in file("master"))
   .settings(
     commonSettings,
     idePackagePrefix := Some("kr.ac.postech.paranode.master"),
-    assembly / assemblyJarName := "master.jar"
+    assembly / assemblyOutputPath := file("build/master")
   )
   .dependsOn(core)
   .dependsOn(rpc)
@@ -70,7 +76,7 @@ lazy val worker = (project in file("worker"))
   .settings(
     commonSettings,
     idePackagePrefix := Some("kr.ac.postech.paranode.worker"),
-    assembly / assemblyJarName := "worker.jar"
+    assembly / assemblyOutputPath := file("build/worker")
   )
   .dependsOn(core)
   .dependsOn(rpc)
