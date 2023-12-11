@@ -11,6 +11,8 @@ import kr.ac.postech.paranode.utils.GenericBuildFrom
 import org.apache.logging.log4j.scala.Logging
 
 import java.util.UUID
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import scala.concurrent._
 import scala.reflect.io.Directory
 import scala.reflect.io.File
@@ -20,13 +22,15 @@ import scala.util.hashing.MurmurHash3
 object WorkerService {
   def apply(
       inputDirectories: Array[Directory],
-      outputDirectory: Directory
+      outputDirectory: Directory,
+      onFinished: () => Unit = () => {}
   )(implicit executionContext: ExecutionContext): ServerServiceDefinition =
     WorkerGrpc.bindService(
       new WorkerService(
         executionContext,
         inputDirectories,
-        outputDirectory
+        outputDirectory,
+        onFinished
       ),
       executionContext
     )
@@ -35,7 +39,8 @@ object WorkerService {
 class WorkerService(
     executionContext: ExecutionContext,
     inputDirectories: Array[Directory],
-    outputDirectory: Directory
+    outputDirectory: Directory,
+    onFinished: () => Unit = () => {}
 ) extends WorkerGrpc.Worker
     with Logging {
 
@@ -69,10 +74,11 @@ class WorkerService(
   override def sort(request: SortRequest): Future[SortReply] = {
     val promise = Promise[SortReply]
 
+    val executor = Executors.newFixedThreadPool(15)
+
     implicit val executionContext: ExecutionContextExecutor =
-      scala.concurrent.ExecutionContext.fromExecutor(
-        java.util.concurrent.Executors
-          .newFixedThreadPool(15)
+      ExecutionContext.fromExecutor(
+        executor
       )
 
     def sorted(path: Path) = Future {
@@ -108,6 +114,11 @@ class WorkerService(
       }
     }(executionContext)
 
+    promise.future.onComplete(_ => {
+      executor.shutdown()
+      executor.awaitTermination(5, TimeUnit.SECONDS)
+    })
+
     promise.future
   }
 
@@ -116,10 +127,11 @@ class WorkerService(
   ): Future[PartitionReply] = {
     val promise = Promise[PartitionReply]
 
+    val executor = Executors.newFixedThreadPool(15)
+
     implicit val executionContext: ExecutionContextExecutor =
-      scala.concurrent.ExecutionContext.fromExecutor(
-        java.util.concurrent.Executors
-          .newFixedThreadPool(15)
+      ExecutionContext.fromExecutor(
+        executor
       )
 
     val workers: Seq[WorkerMetadata] = request.workers
@@ -182,16 +194,22 @@ class WorkerService(
       }
     }(executionContext)
 
+    promise.future.onComplete(_ => {
+      executor.shutdown()
+      executor.awaitTermination(5, TimeUnit.SECONDS)
+    })
+
     promise.future
   }
 
   override def exchange(request: ExchangeRequest): Future[ExchangeReply] = {
     val promise = Promise[ExchangeReply]
 
+    val executor = Executors.newFixedThreadPool(15)
+
     implicit val executionContext: ExecutionContextExecutor =
       scala.concurrent.ExecutionContext.fromExecutor(
-        java.util.concurrent.Executors
-          .newFixedThreadPool(15)
+        executor
       )
 
     val workers: Seq[WorkerMetadata] = request.workers
@@ -247,6 +265,11 @@ class WorkerService(
       }
     }(executionContext)
 
+    promise.future.onComplete(_ => {
+      executor.shutdown()
+      executor.awaitTermination(5, TimeUnit.SECONDS)
+    })
+
     promise.future
   }
 
@@ -254,6 +277,12 @@ class WorkerService(
       request: SaveBlockRequest
   ): Future[SaveBlockReply] = {
     val promise = Promise[SaveBlockReply]
+
+    val executor = Executors.newFixedThreadPool(15)
+    implicit val executionContext: ExecutionContextExecutor =
+      ExecutionContext.fromExecutor(
+        executor
+      )
 
     Future {
       try {
@@ -277,11 +306,23 @@ class WorkerService(
       }
     }(executionContext)
 
+    promise.future.onComplete(_ => {
+      executor.shutdown()
+      executor.awaitTermination(5, TimeUnit.SECONDS)
+    })
+
     promise.future
   }
 
   override def merge(request: MergeRequest): Future[MergeReply] = {
     val promise = Promise[MergeReply]
+
+    val executor = Executors.newFixedThreadPool(15)
+
+    implicit val executionContext: ExecutionContextExecutor =
+      ExecutionContext.fromExecutor(
+        executor
+      )
 
     Future {
       try {
@@ -322,7 +363,35 @@ class WorkerService(
       }
     }(executionContext)
 
+    promise.future.onComplete(_ => {
+      executor.shutdown()
+      executor.awaitTermination(5, TimeUnit.SECONDS)
+    })
+
     promise.future
   }
 
+  override def terminate(request: TerminateRequest): Future[TerminateReply] = {
+    val promise = Promise[TerminateReply]
+
+    val executor = Executors.newSingleThreadExecutor()
+
+    implicit val executionContext: ExecutionContextExecutor =
+      ExecutionContext.fromExecutor(
+        executor
+      )
+
+    Future {
+      logger.info(s"[WorkerServer] Terminate ($request)")
+      promise.success(new TerminateReply())
+    }(executionContext)
+
+    promise.future.onComplete(_ => {
+      executor.shutdown()
+      executor.awaitTermination(5, TimeUnit.SECONDS)
+      onFinished()
+    })
+
+    promise.future
+  }
 }
