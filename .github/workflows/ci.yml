@@ -47,11 +47,11 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: master
-          path: master/target/scala-2.13/master.jar
+          path: build/master
       - uses: actions/upload-artifact@v3
         with:
           name: worker
-          path: worker/target/scala-2.13/worker.jar
+          path: build/worker
       - name: Release development build
         if: github.ref == 'refs/heads/develop'
         uses: marvinpinto/action-automatic-releases@latest
@@ -61,8 +61,8 @@ jobs:
           prerelease: true
           title: "Development Build"
           files: |
-            master/target/scala-2.13/master.jar
-            worker/target/scala-2.13/worker.jar
+            build/master
+            build/worker
       - name: Release production build
         if: github.ref == 'refs/heads/main'
         uses: marvinpinto/action-automatic-releases@latest
@@ -71,5 +71,5 @@ jobs:
           automatic_release_tag: "latest"
           title: "Production Build"
           files: |
-            master/target/scala-2.13/master.jar
-            worker/target/scala-2.13/worker.jar
+            build/master
+            build/worker
