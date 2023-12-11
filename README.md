@@ -12,6 +12,7 @@
 To build the project, follow these instructions:
 
 1. Clone the repository.
+1. Run `sbt clean`.
 1. Run `sbt assembly`.
 
 ### Run
@@ -19,12 +20,13 @@ To build the project, follow these instructions:
 To launch a master node and worker nodes, follow these steps:
 
 1. Build the project using the instructions above.
-1. Run [`master` script](bin/master) with parameters.
-    - For example, execute `./master <NUMBER_OF_WORKERS>` from the [`bin`](bin) directory.
-1. Run [`worker` script](bin/worker) with parameters.
-    - For example, `./worker <MASTER_HOST>:<MASTER_PORT> -I <INPUT_DIRECTORY> <INPUT_DIRECTORY> <...> -O <OUTPUT_DIRECTORY>` from the [`bin`](bin) directory.
+1. Ensure that `master` and `worker` executables are present in the [`build`](build) directory.
+1. Run [`master`](build/master) with parameters.
+    - For example, `./master <NUMBER_OF_WORKERS>`.
+1. Run [`worker`](build/worker) with parameters.
+    - For example, `./worker <MASTER_HOST>:<MASTER_PORT> -I <INPUT_DIRECTORY> <INPUT_DIRECTORY> <...> -O <OUTPUT_DIRECTORY>`.
 
-It is possible to run jar files downloaded from releases page instead of building the project.
+Note that built executables consist of shell scripts and JAR files, and thus require systems that support running shell scripts and have Java installed.
 
 ## Development
 

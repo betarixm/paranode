@@ -7,6 +7,7 @@ import kr.ac.postech.paranode.utils.Hooks
 import org.apache.logging.log4j.scala.Logging
 
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -28,10 +29,28 @@ object Worker extends Logging {
       workerArguments.outputDirectory
     )
 
-    Await.result(
-      worker.run()(ExecutionContext.global),
-      scala.concurrent.duration.Duration.Inf
-    )
+    val executor = Executors.newCachedThreadPool()
+
+    val executionContext: ExecutionContext =
+      ExecutionContext.fromExecutor(
+        executor
+      )
+
+    try {
+      Await.result(
+        worker.run()(executionContext),
+        scala.concurrent.duration.Duration.Inf
+      )
+    } catch {
+      case statusRuntimeException: io.grpc.StatusRuntimeException if {
+            val status = statusRuntimeException.getStatus
+            status.getCode == io.grpc.Status.Code.UNAVAILABLE && status.getDescription
+              .contains("debug data: app_requested")
+          } => // Suppress
+    } finally {
+      worker.shutdown()
+      executor.shutdown()
+    }
   }
 
 }
@@ -46,15 +65,21 @@ class Worker(
 ) extends Logging {
   private val workerMetadata = WorkerMetadata(host, port, None)
 
+  private val serviceExecutor = Executors.newCachedThreadPool()
+
   private val serviceExecutionContext: ExecutionContext =
     ExecutionContext.fromExecutor(
-      Executors.newCachedThreadPool()
+      serviceExecutor
     )
 
   private val server = new GrpcServer(
     WorkerService(
       inputDirectories,
-      outputDirectory
+      outputDirectory,
+      onFinished = () => {
+        serviceExecutor.shutdown()
+        serviceExecutor.awaitTermination(3, TimeUnit.SECONDS)
+      }
     )(serviceExecutionContext),
     port
   )

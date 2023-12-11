@@ -23,6 +23,6 @@ ENV NUMBER_OF_WORKERS=${NUMBER_OF_WORKERS}
 
 WORKDIR /app
 
-COPY --from=builder /app/master/target/scala-2.13/master.jar .
+COPY --from=builder /app/build/master .
 
-ENTRYPOINT java -jar master.jar ${NUMBER_OF_WORKERS}
+ENTRYPOINT ./master ${NUMBER_OF_WORKERS}

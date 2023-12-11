@@ -11,6 +11,7 @@ service Worker {
   rpc Exchange (ExchangeRequest) returns (ExchangeReply) {}
   rpc SaveBlock (SaveBlockRequest) returns (SaveBlockReply) {}
   rpc Merge (MergeRequest) returns (MergeReply) {}
+  rpc Terminate (TerminateRequest) returns (TerminateReply) {}
 }
 
 message SampleRequest {
@@ -46,3 +47,8 @@ message SaveBlockReply {}
 message MergeRequest {}
 
 message MergeReply {}
+
+message TerminateRequest {}
+
+message TerminateReply {}
+
