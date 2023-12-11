@@ -11,6 +11,7 @@ import kr.ac.postech.paranode.utils.Progress._
 import org.apache.logging.log4j.scala.Logging
 
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
@@ -28,10 +29,18 @@ object Master extends Logging {
       masterArguments.numberOfWorkers
     )
 
+    val executor = Executors.newCachedThreadPool()
+
+    val executionContext: ExecutionContext =
+      ExecutionContext.fromExecutor(executor)
+
     Await.result(
-      master.run()(ExecutionContext.global),
+      master.run()(executionContext),
       scala.concurrent.duration.Duration.Inf
     )
+
+    executor.shutdown()
+    executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)
   }
 
 }
@@ -54,10 +63,10 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
           s"numberOfWorkers: ${numberOfWorkers}\n"
       )
 
+      val serviceExecutor = Executors.newCachedThreadPool()
+
       val serviceExecutionContext: ExecutionContextExecutor =
-        ExecutionContext.fromExecutor(
-          Executors.newCachedThreadPool()
-        )
+        ExecutionContext.fromExecutor(serviceExecutor)
 
       val server =
         new GrpcServer(
@@ -87,10 +96,12 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
         WorkerClient(worker.host, worker.port)
       }
 
+      val requestExecutor = Executors
+        .newFixedThreadPool(registeredWorkers.size)
+
       val requestExecutionContext: ExecutionContextExecutor =
-        scala.concurrent.ExecutionContext.fromExecutor(
-          java.util.concurrent.Executors
-            .newFixedThreadPool(registeredWorkers.size)
+        ExecutionContext.fromExecutor(
+          requestExecutor
         )
 
       logger.info(s"[Master] Clients: $clients")
@@ -143,6 +154,18 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
       server.stop()
 
       serverState.update(_ => Progress.Finished)
+
+      serviceExecutor.shutdown()
+      requestExecutor.shutdown()
+
+      serviceExecutor.awaitTermination(
+        5,
+        TimeUnit.SECONDS
+      )
+      requestExecutor.awaitTermination(
+        5,
+        TimeUnit.SECONDS
+      )
     }
 
   def blockUntilRunning(): Unit = {
