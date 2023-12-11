@@ -5,6 +5,8 @@ import io.grpc.ServerBuilder
 import io.grpc.ServerServiceDefinition
 import org.apache.logging.log4j.scala.Logging
 
+import java.util.concurrent.TimeUnit
+
 class GrpcServer[T <: ServerBuilder[T]](
     service: ServerServiceDefinition,
     port: Int
@@ -36,7 +38,8 @@ class GrpcServer[T <: ServerBuilder[T]](
 
   def stop(): Unit = {
     if (server != null) {
-      server.shutdown()
+      server.shutdown().awaitTermination(5, TimeUnit.SECONDS)
+
     }
   }
 
