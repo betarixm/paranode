@@ -40,7 +40,7 @@ object Master extends Logging {
     )
 
     executor.shutdown()
-    executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)
+    executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)
   }
 
 }
@@ -148,6 +148,12 @@ class Master(host: String, port: Int, numberOfWorkers: Int) extends Logging {
       clients.merge()(requestExecutionContext)
 
       logger.info("[Master] Merge finished")
+
+      logger.info("[Master] Terminate started")
+
+      clients.terminate()(requestExecutionContext)
+
+      logger.info("[Master] Terminate finished")
 
       clients.foreach(_.shutdown())
 
