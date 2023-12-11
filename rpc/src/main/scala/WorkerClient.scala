@@ -68,6 +68,17 @@ object WorkerClient {
         ),
         scala.concurrent.duration.Duration.Inf
       )
+
+    def terminate()(implicit
+        executionContext: ExecutionContext
+    ): List[TerminateReply] =
+      Await.result(
+        Future.traverse(clients)(_.terminate())(
+          GenericBuildFrom[WorkerClient, TerminateReply],
+          executionContext
+        ),
+        scala.concurrent.duration.Duration.Inf
+      )
   }
 
   def apply(host: String, port: Int): WorkerClient = {
@@ -136,5 +147,10 @@ class WorkerClient private (
   def merge(): Future[MergeReply] = {
     val request = MergeRequest()
     stub.merge(request)
+  }
+
+  def terminate(): Future[TerminateReply] = {
+    val request = TerminateRequest()
+    stub.terminate(request)
   }
 }
