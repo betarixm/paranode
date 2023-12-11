@@ -32,6 +32,6 @@ COPY docker/worker/data/${WORKER_ID} /data
 
 WORKDIR /app
 
-COPY --from=builder /app/worker/target/scala-2.13/worker.jar .
+COPY --from=builder /app/build/worker .
 
-ENTRYPOINT java -jar worker.jar ${MASTER_HOST}:${MASTER_PORT} -I /data/0 /data/1 -O /output/
+ENTRYPOINT ./worker ${MASTER_HOST}:${MASTER_PORT} -I /data/0 /data/1 -O /output/
