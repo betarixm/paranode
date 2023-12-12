@@ -15,23 +15,41 @@ services:
         - MASTER_PORT=50051
     depends_on:
       - master
+    volumes:
+      - ./build/output/0:/output
   worker-1:
     build:
       context: .
       dockerfile: docker/worker/Dockerfile
       args:
-        - WORKER_ID=0
+        - WORKER_ID=1
         - MASTER_HOST=master
         - MASTER_PORT=50051
     depends_on:
       - master
+    volumes:
+      - ./build/output/1:/output
   worker-2:
     build:
       context: .
       dockerfile: docker/worker/Dockerfile
       args:
-        - WORKER_ID=0
+        - WORKER_ID=2
         - MASTER_HOST=master
         - MASTER_PORT=50051
     depends_on:
       - master
+    volumes:
+      - ./build/output/2:/output
+  worker-3:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+      args:
+        - WORKER_ID=3
+        - MASTER_HOST=master
+        - MASTER_PORT=50051
+    depends_on:
+      - master
+    volumes:
+      - ./build/output/3:/output
