@@ -25,4 +25,4 @@ WORKDIR /app
 
 COPY --from=builder /app/build/master .
 
-ENTRYPOINT ./master ${NUMBER_OF_WORKERS}
+ENTRYPOINT time ./master ${NUMBER_OF_WORKERS}
